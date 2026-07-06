@@ -1,15 +1,15 @@
 // server/src/shared/constants/roles.js
-const ROLES = {
+const ROLES = Object.freeze({
   CUSTOMER: 'CUSTOMER',
   OUTLET_MANAGER: 'OUTLET_MANAGER',
   ADMIN: 'ADMIN',
-};
+});
 
-const ROLE_HIERARCHY = {
+const ROLE_HIERARCHY = Object.freeze({
   [ROLES.CUSTOMER]: 1,
   [ROLES.OUTLET_MANAGER]: 2,
   [ROLES.ADMIN]: 3,
-};
+});
 
 const ROLE_PERMISSIONS = {
   [ROLES.CUSTOMER]: [
@@ -46,8 +46,8 @@ const ROLE_PERMISSIONS = {
   ],
 };
 
-const REGISTERABLE_ROLES = [ROLES.CUSTOMER];
-const SEEDED_ROLES = [ROLES.ADMIN];
+const REGISTERABLE_ROLES = Object.freeze([ROLES.CUSTOMER]);
+const SEEDED_ROLES = Object.freeze([ROLES.ADMIN]);
 
 export {
   ROLES,

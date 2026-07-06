@@ -1,22 +1,43 @@
 // server/src/config/env.js
-import Joi from 'joi';
+import dotenv from 'dotenv';
+import { z } from 'zod';
 
-const schema = Joi.object({
-  NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
-  PORT: Joi.number().default(5000),
-  MONGO_URI: Joi.string().uri().required(),
-  JWT_SECRET: Joi.string().min(32).required(),
-  JWT_EXPIRES_IN: Joi.string().default('15m'),
-  REFRESH_SECRET: Joi.string().min(32).required(),
-  REFRESH_EXPIRES_IN: Joi.string().default('7d'),
-  CORS_ORIGIN: Joi.string().uri().required(),
-  RATE_LIMIT_WINDOW_MS: Joi.number().default(15 * 60 * 1000),
-  RATE_LIMIT_MAX_REQUESTS: Joi.number().default(100),
-}).unknown().required();
+// Load environment variables from .env file
+dotenv.config();
 
-const { error, value } = schema.validate(process.env);
-if (error) {
-  throw new Error(`Config validation error: ${error.message}`);
+const durationPattern = /^\d+[mhd]$/;
+
+const envSchema = z.object({
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  PORT: z.coerce.number().default(5000),
+  MONGODB_URI: z.string().url(),
+  REDIS_URL: z.string().url(),
+  CLOUDINARY_URL: z.string().url(),
+  JWT_SECRET: z.string().min(32).optional(),
+  JWT_ACCESS_SECRET: z.string().min(32).optional(),
+  JWT_EXPIRES_IN: z.string().regex(durationPattern).default('15m'),
+  REFRESH_SECRET: z.string().min(32),
+  REFRESH_EXPIRES_IN: z.string().regex(durationPattern).default('7d'),
+  CORS_ORIGIN: z.string().url(),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
+  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
+});
+
+const parsedEnv = envSchema.safeParse(process.env);
+
+if (!parsedEnv.success) {
+  const message = parsedEnv.error.issues.map((issue) => `${issue.path.join('.') || 'env'}: ${issue.message}`).join('; ');
+  throw new Error(`Config validation error: ${message}`);
 }
 
-export default value;
+const accessSecret = parsedEnv.data.JWT_ACCESS_SECRET || parsedEnv.data.JWT_SECRET;
+
+if (!accessSecret) {
+  throw new Error('Config validation error: JWT_ACCESS_SECRET or JWT_SECRET is required');
+}
+
+export default {
+  ...parsedEnv.data,
+  JWT_ACCESS_SECRET: accessSecret,
+  JWT_SECRET: parsedEnv.data.JWT_SECRET || accessSecret,
+};

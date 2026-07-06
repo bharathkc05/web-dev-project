@@ -1,5 +1,5 @@
 // server/src/shared/utils/permissions.js
-import { ROLE_PERMISSIONS, ROLE_HIERARCHY } from '../constants/roles.js';
+import { ROLE_PERMISSIONS, ROLE_HIERARCHY, ROLES } from '../constants/roles.js';
 
 export const hasPermission = (user, permission) => {
   if (!user) return false;
@@ -19,7 +19,7 @@ export const hasRoleOrHigher = (user, role) => {
 
 export const canAccessOutlet = (user, outletId) => {
   if (!user) return false;
-  if (user.role === 'ADMIN') return true;
-  if (user.role === 'OUTLET_MANAGER') return user.outletId?.toString() === outletId?.toString();
+  if (user.role === ROLES.ADMIN) return true;
+  if (user.role === ROLES.OUTLET_MANAGER) return user.outletId?.toString() === outletId?.toString();
   return false;
 };

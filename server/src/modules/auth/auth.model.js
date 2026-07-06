@@ -1,16 +1,16 @@
 // server/src/modules/auth/auth.model.js
 import mongoose from 'mongoose';
-import { ROLES } from '../../shared/constants/roles.js';
+import { ROLES, ROLE_PERMISSIONS } from '../../shared/constants/roles.js';
 
 const userSchema = new mongoose.Schema(
   {
+    name: { type: String, required: true, trim: true },
     email: {
       type: String,
       required: true,
       unique: true,
       lowercase: true,
       trim: true,
-      index: true,
     },
     passwordHash: { type: String, required: true, select: false },
     role: {
@@ -19,28 +19,61 @@ const userSchema = new mongoose.Schema(
       default: ROLES.CUSTOMER,
       index: true,
     },
+    phone: { type: String, trim: true },
+    savedAddresses: [
+      {
+        label: { type: String, required: true },
+        street: { type: String, required: true },
+        city: { type: String, required: true },
+        state: { type: String, required: true },
+        zipCode: { type: String, required: true },
+        isDefault: { type: Boolean, default: false },
+      },
+    ],
+    favouriteProductIds: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: 'Product',
+      default: [],
+    },
+    isActive: { type: Boolean, default: true, index: true },
+    suspendedAt: { type: Date, default: null },
+    suspendedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    suspensionReason: { type: String, trim: true, default: null },
+    isDeleted: { type: Boolean, default: false, index: true },
+    deletedAt: { type: Date, default: null },
+    deletedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     outletId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Outlet',
       default: null,
       index: true,
     },
-    name: { type: String, required: true, trim: true },
-    phone: { type: String, trim: true },
-    avatar: { type: String },
-    isActive: { type: Boolean, default: true, index: true },
-    isEmailVerified: { type: Boolean, default: false },
-    lastLoginAt: { type: Date },
     refreshTokenHash: { type: String, select: false },
     refreshTokenExpiresAt: { type: Date, select: false },
   },
   { timestamps: true }
 );
 
-userSchema.index({ role: 1, outletId: 1 });
+userSchema.index({ role: 1, isActive: 1 });
+userSchema.index({ isDeleted: 1, deletedAt: 1 });
+
+userSchema.pre(/^find/, function addPasswordHashExclusion(next) {
+  const projection = typeof this.projection === 'function' ? this.projection() : this._fields;
+  if (!projection || projection.passwordHash === undefined) {
+    this.select('-passwordHash');
+  }
+  next();
+});
 
 userSchema.virtual('permissions').get(function () {
-  const { ROLE_PERMISSIONS } = require('../../shared/constants/roles.js');
   return ROLE_PERMISSIONS[this.role] || [];
 });
 

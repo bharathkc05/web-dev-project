@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Build output
+dist/
+client/dist/
+server/dist/
+build/
+client/build/
+server/build/
+
+# Test and lint output
+coverage/
+client/coverage/
+server/coverage/
+.eslintcache
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment files
+.env
+.env.*
+client/.env
+client/.env.*
+server/.env
+server/.env.*
+!.env.example
+!client/.env.example
+!server/.env.example
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Misc temporary and tool output files
+*.tmp
+*.temp
+graphify-out/
+logs/
+server/logs/

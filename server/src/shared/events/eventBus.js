@@ -1,4 +1,6 @@
 // server/src/shared/events/eventBus.js
+import logger from '../utils/logger.js';
+
 class EventBus {
   constructor() {
     this.handlers = new Map();
@@ -23,7 +25,7 @@ class EventBus {
         try {
           handler(payload);
         } catch (error) {
-          console.error(`Error in event handler for ${event}:`, error);
+          logger.error(`Error in event handler for ${event}:`, { error: error.message, stack: error.stack });
         }
       });
     }

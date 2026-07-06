@@ -3,86 +3,78 @@ import { ApiError } from '../utils/ApiError.js';
 import logger from '../utils/logger.js';
 import config from '../../config/env.js';
 
-export const errorHandler = (err, req, res, next) => {
-  if (err instanceof ApiError) {
-    return res.status(err.statusCode).json({
-      success: false,
-      message: err.message,
-      errors: err.errors,
-      ...(config.NODE_ENV === 'development' && { stack: err.stack }),
-    });
-  }
+const formatErrorResponse = (message, errors = []) => ({
+  success: false,
+  message,
+  errors,
+});
 
-  // Mongoose validation error
-  if (err.name === 'ValidationError') {
-    const errors = Object.values(err.errors).map((e) => ({
-      field: e.path,
-      message: e.message,
-    }));
-    return res.status(400).json({
-      success: false,
-      message: 'Validation failed',
-      errors,
-    });
-  }
-
-  // Mongoose duplicate key error
-  if (err.code === 11000) {
-    const field = Object.keys(err.keyValue)[0];
-    return res.status(409).json({
-      success: false,
-      message: `${field} already exists`,
-      errors: [{ field, message: `${field} already exists` }],
-    });
-  }
-
-  // Mongoose cast error (invalid ObjectId)
-  if (err.name === 'CastError') {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid resource ID',
-      errors: [{ field: err.path, message: 'Invalid ID format' }],
-    });
-  }
-
-  // JWT errors
-  if (err.name === 'JsonWebTokenError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Invalid token',
-    });
-  }
-
-  if (err.name === 'TokenExpiredError') {
-    return res.status(401).json({
-      success: false,
-      message: 'Token expired',
-    });
-  }
-
-  // Log unexpected errors
-  logger.error('Unexpected error:', {
-    message: err.message,
-    stack: err.stack,
-    path: req.path,
+const logError = (err, req, statusCode) => {
+  logger.error(err.message || 'Unhandled error', {
+    statusCode,
     method: req.method,
+    path: req.originalUrl || req.path,
     ip: req.ip,
-  });
-
-  // Default error response
-  const statusCode = err.statusCode || 500;
-  const message = config.NODE_ENV === 'production' ? 'Internal Server Error' : err.message;
-
-  res.status(statusCode).json({
-    success: false,
-    message,
-    ...(config.NODE_ENV === 'development' && { stack: err.stack }),
+    errors: err.errors || [],
+    stack: config.NODE_ENV === 'production' ? undefined : err.stack,
   });
 };
 
+export const errorHandler = (err, req, res, next) => {
+  let statusCode = err.statusCode || 500;
+  let message = err.message || 'Internal Server Error';
+  let errors = Array.isArray(err.errors) ? err.errors : [];
+
+  if (err instanceof ApiError) {
+    statusCode = err.statusCode;
+  }
+  else if (err.name === 'ValidationError') {
+    statusCode = 400;
+    message = 'Validation failed';
+    errors = Object.values(err.errors).map((error) => ({
+      field: error.path,
+      message: error.message,
+    }));
+  }
+  else if (err.code === 11000) {
+    statusCode = 409;
+    const field = Object.keys(err.keyValue)[0];
+    message = `${field} already exists`;
+    errors = [{ field, message }];
+  }
+  else if (err.name === 'CastError') {
+    statusCode = 400;
+    message = 'Invalid resource ID';
+    errors = [{ field: err.path, message: 'Invalid ID format' }];
+  }
+  else if (err.name === 'JsonWebTokenError') {
+    statusCode = 401;
+    message = 'Invalid token';
+    errors = [];
+  }
+  else if (err.name === 'TokenExpiredError') {
+    statusCode = 401;
+    message = 'Token expired';
+    errors = [];
+  }
+  else if (err.name === 'MulterError') {
+    statusCode = 400;
+    message = err.code === 'LIMIT_FILE_SIZE' ? 'File size must not exceed 5MB' : err.message;
+    errors = [{
+      field: 'image',
+      message,
+    }];
+  }
+
+  logError(err, req, statusCode);
+
+  const safeMessage = statusCode >= 500 && config.NODE_ENV === 'production'
+    ? 'Internal Server Error'
+    : message;
+
+  return res.status(statusCode).json(formatErrorResponse(safeMessage, errors));
+};
+
 export const notFoundHandler = (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Route ${req.method} ${req.path} not found`,
-  });
+  return res.status(404).json(formatErrorResponse(`Route ${req.method} ${req.path} not found`, []));
 };

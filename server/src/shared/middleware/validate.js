@@ -1,56 +1,30 @@
 // server/src/shared/middleware/validate.js
-import { ApiError } from '../utils/ApiError.js';
+const formatZodErrors = (issues) => issues.reduce((accumulator, issue) => {
+  const field = issue.path.length > 0 ? issue.path.join('.') : 'root';
 
-export const validate = (schema) => (req, res, next) => {
-  const { error, value } = schema.validate(req.body, {
-    abortEarly: false,
-    stripUnknown: true,
-  });
-
-  if (error) {
-    const errors = error.details.map((detail) => ({
-      field: detail.path.join('.'),
-      message: detail.message,
-    }));
-    return next(ApiError.badRequest('Validation failed', errors));
+  if (!accumulator[field]) {
+    accumulator[field] = issue.message;
   }
 
-  req.body = value;
-  next();
-};
+  return accumulator;
+}, {});
 
-export const validateQuery = (schema) => (req, res, next) => {
-  const { error, value } = schema.validate(req.query, {
-    abortEarly: false,
-    stripUnknown: true,
-  });
+const createValidator = (schema, requestKey, message) => (req, res, next) => {
+  const result = schema.safeParse(req[requestKey]);
 
-  if (error) {
-    const errors = error.details.map((detail) => ({
-      field: detail.path.join('.'),
-      message: detail.message,
-    }));
-    return next(ApiError.badRequest('Invalid query parameters', errors));
+  if (!result.success) {
+    return res.status(400).json({
+      success: false,
+      message,
+      errors: formatZodErrors(result.error.issues),
+    });
   }
 
-  req.query = value;
-  next();
+  req[requestKey] = result.data;
+  return next();
 };
 
-export const validateParams = (schema) => (req, res, next) => {
-  const { error, value } = schema.validate(req.params, {
-    abortEarly: false,
-    stripUnknown: true,
-  });
-
-  if (error) {
-    const errors = error.details.map((detail) => ({
-      field: detail.path.join('.'),
-      message: detail.message,
-    }));
-    return next(ApiError.badRequest('Invalid route parameters', errors));
-  }
-
-  req.params = value;
-  next();
-};
+export const validateRequest = (schema) => createValidator(schema, 'body', 'Validation failed');
+export const validate = validateRequest;
+export const validateQuery = (schema) => createValidator(schema, 'query', 'Invalid query parameters');
+export const validateParams = (schema) => createValidator(schema, 'params', 'Invalid route parameters');

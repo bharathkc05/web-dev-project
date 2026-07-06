@@ -2,7 +2,7 @@
 import winston from 'winston';
 import config from '../../config/env.js';
 
-const logFormat = winston.format.combine(
+const devFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
   winston.format.printf(({ timestamp, level, message, stack, ...meta }) => {
@@ -17,22 +17,35 @@ const logFormat = winston.format.combine(
   })
 );
 
+const prodFormat = winston.format.combine(
+  winston.format.timestamp(),
+  winston.format.errors({ stack: true }),
+  winston.format.json()
+);
+
+const isProduction = config.NODE_ENV === 'production';
+
 const logger = winston.createLogger({
-  level: config.NODE_ENV === 'production' ? 'info' : 'debug',
-  format: logFormat,
+  level: isProduction ? 'info' : 'debug',
+  format: isProduction ? prodFormat : devFormat,
   transports: [
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        logFormat
-      ),
+      format: isProduction
+        ? prodFormat
+        : winston.format.combine(winston.format.colorize(), devFormat),
     }),
   ],
 });
 
-if (config.NODE_ENV === 'production') {
-  logger.add(new winston.transports.File({ filename: 'logs/error.log', level: 'error' }));
-  logger.add(new winston.transports.File({ filename: 'logs/combined.log' }));
+// Write errors to log file in production
+if (isProduction) {
+  logger.add(
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error',
+      format: prodFormat,
+    })
+  );
 }
 
 export default logger;
