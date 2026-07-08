@@ -30,19 +30,29 @@ export const getPopularProducts = async (req, res, next) => {
   }
 };
 
-export const createProduct = async (req, res, next) => {
+export const activateProduct = async (req, res, next) => {
   try {
-    const result = await productService.createProduct(req.body, req.file);
-    res.status(201).json(ApiResponse.created(result, 'Product created successfully'));
+    const data = { ...req.body, outletId: req.user.outletId };
+    const result = await productService.activateProduct(data);
+    res.status(201).json(ApiResponse.created(result, 'Product activated successfully'));
   } catch (error) {
     next(error);
   }
 };
 
-export const updateProduct = async (req, res, next) => {
+export const getAvailableMasterProducts = async (req, res, next) => {
   try {
-    const result = await productService.updateProduct(req.params.id, req.body, req.user, req.file);
-    res.status(200).json(ApiResponse.ok(result, 'Product updated successfully'));
+    const result = await productService.getAvailableMasterProducts(req.user.outletId);
+    res.status(200).json(ApiResponse.ok(result, 'Available master products fetched successfully'));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateOutletProduct = async (req, res, next) => {
+  try {
+    const result = await productService.updateOutletProduct(req.params.id, req.body, req.user);
+    res.status(200).json(ApiResponse.ok(result, 'Outlet product updated successfully'));
   } catch (error) {
     next(error);
   }
@@ -63,6 +73,16 @@ export const createOffer = async (req, res, next) => {
     const outletId = req.user.outletId;
     const result = await productService.createOffer(outletId, req.body);
     res.status(201).json(ApiResponse.created(result, 'Offer created successfully'));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getOffers = async (req, res, next) => {
+  try {
+    const outletId = req.user.outletId;
+    const result = await productService.getOffers(outletId);
+    res.status(200).json(ApiResponse.ok(result, 'Offers fetched successfully'));
   } catch (error) {
     next(error);
   }

@@ -22,6 +22,7 @@ const buildRequestUser = (user) => ({
   userId: String(user._id),
   email: user.email,
   role: user.role,
+  outletId: user.outletId ? String(user.outletId) : null,
 });
 
 const authenticate = async (req, res, next) => {
@@ -29,7 +30,7 @@ const authenticate = async (req, res, next) => {
     const token = extractBearerToken(req.headers.authorization);
     const decoded = jwt.verify(token, config.JWT_ACCESS_SECRET);
 
-    const user = await User.findById(decoded.sub).select('_id email role isActive').lean();
+    const user = await User.findById(decoded.sub).select('_id email role isActive outletId').lean();
     if (!user || !user.isActive) {
       throw ApiError.unauthorized('Unauthorized');
     }

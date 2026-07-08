@@ -1,0 +1,8 @@
+node_modules/
+.env
+products.html
+products2.html
+import-deals.js
+import-deals2.js
+npm-debug.log
+*.log

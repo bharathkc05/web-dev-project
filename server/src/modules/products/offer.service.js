@@ -97,8 +97,14 @@ export const createOffer = async (outletId, data) => {
   return offer.toJSON();
 };
 
+export const getOffers = async (outletId) => {
+  const offers = await Offer.find({ outletId }).sort({ createdAt: -1 }).lean();
+  return offers;
+};
+
 export default {
   validateOffer,
   calculateDiscount,
   createOffer,
+  getOffers,
 };

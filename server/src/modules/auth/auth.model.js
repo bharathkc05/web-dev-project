@@ -65,13 +65,6 @@ const userSchema = new mongoose.Schema(
 userSchema.index({ role: 1, isActive: 1 });
 userSchema.index({ isDeleted: 1, deletedAt: 1 });
 
-userSchema.pre(/^find/, function addPasswordHashExclusion(next) {
-  const projection = typeof this.projection === 'function' ? this.projection() : this._fields;
-  if (!projection || projection.passwordHash === undefined) {
-    this.select('-passwordHash');
-  }
-  next();
-});
 
 userSchema.virtual('permissions').get(function () {
   return ROLE_PERMISSIONS[this.role] || [];

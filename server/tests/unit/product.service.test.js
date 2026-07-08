@@ -4,6 +4,8 @@ const mockFind = jest.fn();
 const mockFindById = jest.fn();
 const mockCreateProduct = jest.fn();
 const mockFindByIdAndUpdate = jest.fn();
+const mockFindByIdAndDelete = jest.fn();
+const mockAggregateProduct = jest.fn();
 
 const mockFindOneOffer = jest.fn();
 const mockCreateOffer = jest.fn();
@@ -29,6 +31,8 @@ jest.unstable_mockModule('../../src/modules/products/product.model.js', () => ({
     findById: mockFindById,
     create: mockCreateProduct,
     findByIdAndUpdate: mockFindByIdAndUpdate,
+    findByIdAndDelete: mockFindByIdAndDelete,
+    aggregate: mockAggregateProduct,
   },
   Offer: {
     findOne: mockFindOneOffer,
@@ -66,8 +70,8 @@ jest.unstable_mockModule('../../src/shared/utils/cacheHelper.js', () => ({
 const {
   getAllProducts,
   getProductById,
-  createProduct,
-  updateProduct,
+  activateProduct,
+  updateOutletProduct,
   softDeleteProduct,
   getPopularProducts,
   submitReview,
@@ -124,17 +128,12 @@ describe('product.service unit tests', () => {
       mockSetCache.mockResolvedValue(undefined);
 
       const dbProduct = createTestProduct().toJSON();
-      const mockQuery = {
-        sort: jest.fn().mockReturnThis(),
-        limit: jest.fn().mockReturnThis(),
-        lean: jest.fn().mockResolvedValue([dbProduct]),
-      };
-      mockFind.mockReturnValue(mockQuery);
+      mockAggregateProduct.mockResolvedValue([dbProduct]);
 
       const result = await getAllProducts({ outletId: MOCK_OUTLET_ID });
 
       expect(mockGetCache).toHaveBeenCalledWith(`products:${MOCK_OUTLET_ID}:all:avail:start:20`);
-      expect(mockFind).toHaveBeenCalled();
+      expect(mockAggregateProduct).toHaveBeenCalled();
       expect(mockSetCache).toHaveBeenCalledWith(
         `products:${MOCK_OUTLET_ID}:all:avail:start:20`,
         {
@@ -164,14 +163,12 @@ describe('product.service unit tests', () => {
       mockSetCache.mockResolvedValue(undefined);
 
       const dbProduct = createTestProduct().toJSON();
-      mockFindById.mockReturnValue({
-        lean: jest.fn().mockResolvedValue(dbProduct),
-      });
+      mockAggregateProduct.mockResolvedValue([dbProduct]);
 
       const result = await getProductById(MOCK_PRODUCT_ID);
 
       expect(mockGetCache).toHaveBeenCalledWith(`product:${MOCK_PRODUCT_ID}`);
-      expect(mockFindById).toHaveBeenCalledWith(MOCK_PRODUCT_ID);
+      expect(mockAggregateProduct).toHaveBeenCalled();
       expect(mockSetCache).toHaveBeenCalledWith(`product:${MOCK_PRODUCT_ID}`, dbProduct, 3600);
       expect(result).toEqual(dbProduct);
     });
@@ -179,9 +176,7 @@ describe('product.service unit tests', () => {
     test('throws not found error if product is missing in DB', async () => {
       mockGetCache.mockResolvedValue(null);
 
-      mockFindById.mockReturnValue({
-        lean: jest.fn().mockResolvedValue(null),
-      });
+      mockAggregateProduct.mockResolvedValue([]);
 
       await expect(getProductById('60c72b2f9b1d8a2c148b456e')).rejects.toMatchObject({
         statusCode: 404,
@@ -190,29 +185,26 @@ describe('product.service unit tests', () => {
     });
   });
 
-  describe('createProduct', () => {
-    test('uploads image, saves product, and invalidates Redis list cache', async () => {
+  describe('activateProduct', () => {
+    test('activates a master product for an outlet and invalidates Redis list cache', async () => {
       mockDeleteCachePattern.mockResolvedValue(undefined);
 
-      mockUploadImage.mockResolvedValue({ secure_url: 'https://cloudinary.com/new.jpg' });
-      
-      const newProduct = createTestProduct({ imageUrl: 'https://cloudinary.com/new.jpg' });
+      const newProduct = createTestProduct();
       mockCreateProduct.mockResolvedValue(newProduct);
 
       const productData = {
         outletId: MOCK_OUTLET_ID,
-        name: 'New Burger',
-        category: 'BURGER',
+        masterProductId: '60c72b2f9b1d8a2c148b4500',
         price: 12.99,
       };
-      const mockFile = { originalname: 'burger.jpg' };
 
-      const result = await createProduct(productData, mockFile);
+      const result = await activateProduct(productData);
 
-      expect(mockUploadImage).toHaveBeenCalledWith(mockFile, 'products');
       expect(mockCreateProduct).toHaveBeenCalledWith({
         ...productData,
-        imageUrl: 'https://cloudinary.com/new.jpg',
+        stock: 0,
+        lowStockThreshold: 10,
+        isAvailable: true,
       });
       expect(mockDeleteCachePattern).toHaveBeenCalledWith('products:*');
       expect(mockDeleteCache).toHaveBeenCalledWith('popular_products');
@@ -220,7 +212,7 @@ describe('product.service unit tests', () => {
     });
   });
 
-  describe('updateProduct', () => {
+  describe('updateOutletProduct', () => {
     test('updates product successfully for outlet manager owner', async () => {
       mockDeleteCache.mockResolvedValue(undefined);
       mockDeleteCachePattern.mockResolvedValue(undefined);
@@ -234,12 +226,12 @@ describe('product.service unit tests', () => {
       });
 
       const user = { role: 'OUTLET_MANAGER', outletId: MOCK_OUTLET_ID };
-      const result = await updateProduct(MOCK_PRODUCT_ID, { name: 'Cheeseburger Deluxe' }, user);
+      const result = await updateOutletProduct(MOCK_PRODUCT_ID, { price: 15.99 }, user);
 
       expect(mockFindById).toHaveBeenCalledWith(MOCK_PRODUCT_ID);
       expect(mockFindByIdAndUpdate).toHaveBeenCalledWith(
         MOCK_PRODUCT_ID,
-        { $set: { name: 'Cheeseburger Deluxe' } },
+        { $set: { price: 15.99 } },
         { new: true }
       );
       expect(mockDeleteCache).toHaveBeenCalledWith(`product:${MOCK_PRODUCT_ID}`);
@@ -253,7 +245,7 @@ describe('product.service unit tests', () => {
 
       const user = { role: 'OUTLET_MANAGER', outletId: MOCK_OUTLET_ID };
       
-      await expect(updateProduct(MOCK_PRODUCT_ID, { name: 'Cheeseburger Deluxe' }, user)).rejects.toMatchObject({
+      await expect(updateOutletProduct(MOCK_PRODUCT_ID, { price: 15.99 }, user)).rejects.toMatchObject({
         statusCode: 403,
         message: 'You do not have permission to modify this product',
       });
@@ -271,18 +263,14 @@ describe('product.service unit tests', () => {
       mockFindById.mockResolvedValue(existingProduct);
 
       const deletedProduct = createTestProduct({ isAvailable: false }).toJSON();
-      mockFindByIdAndUpdate.mockReturnValue({
+      mockFindByIdAndDelete.mockReturnValue({
         lean: jest.fn().mockResolvedValue(deletedProduct),
       });
 
       const user = { role: 'OUTLET_MANAGER', outletId: MOCK_OUTLET_ID };
       const result = await softDeleteProduct(MOCK_PRODUCT_ID, user);
 
-      expect(mockFindByIdAndUpdate).toHaveBeenCalledWith(
-        MOCK_PRODUCT_ID,
-        { $set: { isAvailable: false } },
-        { new: true }
-      );
+      expect(mockFindByIdAndDelete).toHaveBeenCalledWith(MOCK_PRODUCT_ID);
       expect(result.isAvailable).toBe(false);
     });
   });

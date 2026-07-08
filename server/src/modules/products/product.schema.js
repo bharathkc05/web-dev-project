@@ -10,19 +10,37 @@ const booleanQuerySchema = z.preprocess((value) => {
   return value;
 }, z.boolean());
 
-export const createProductSchema = z.object({
-  outletId: objectIdSchema,
+export const createMasterProductSchema = z.object({
   name: z.string().trim().min(1, 'Product name is required').max(100),
   description: z.string().trim().max(500).optional(),
-  category: z.enum(['BURGER', 'SIDE', 'BEVERAGE', 'DESSERT'], {
-    errorMap: () => ({ message: 'Category must be BURGER, SIDE, BEVERAGE, or DESSERT' }),
+  category: z.enum(['BURGERS', 'WRAPS', 'SNACKS', 'BEVERAGES', 'DESSERTS', 'BK CAFE', 'MEALS'], {
+    errorMap: () => ({ message: 'Invalid category' }),
   }),
-  price: z.coerce.number().positive('Price must be a positive number'),
-  stock: z.coerce.number().int().nonnegative('Stock must be a non-negative integer').default(0),
+  quickTab: z.enum(['PERI PERI FEST', 'CRAZY DEALS', 'STARTING @ 59', 'MIX N MATCH COMBOS', 'WHOPPER DELUXE', 'ORIGINAL WHOPPER', 'SUPER SAVER MEALS', 'BURGERS & WRAPS', 'SNACKS', 'BEVERAGES', 'DESSERTS', 'BK CAFE']).optional(),
+  isVeg: booleanQuerySchema.optional().default(false),
+  ingredients: z.array(z.string()).optional().default([]),
+  basePrice: z.coerce.number().nonnegative('Base price must be a non-negative number'),
+  originalPrice: z.coerce.number().nonnegative('Original price must be a non-negative number').optional(),
 });
 
-export const updateProductSchema = createProductSchema.partial().extend({
-  isAvailable: z.boolean().optional(),
+export const activateProductSchema = z.object({
+  masterProductId: objectIdSchema,
+  price: z.coerce.number().nonnegative('Price must be a non-negative number'),
+  originalPrice: z.coerce.number().nonnegative().optional(),
+  stock: z.coerce.number().int().nonnegative('Stock must be a non-negative integer').default(0),
+  lowStockThreshold: z.coerce.number().int().nonnegative().default(10),
+});
+
+export const updateOutletProductSchema = z.object({
+  price: z.coerce.number().nonnegative('Price must be a non-negative number').optional(),
+  originalPrice: z.coerce.number().nonnegative().optional(),
+  stock: z.coerce.number().int().nonnegative().optional(),
+  lowStockThreshold: z.coerce.number().int().nonnegative().optional(),
+  isAvailable: booleanQuerySchema.optional(),
+});
+
+export const updateMasterProductSchema = createMasterProductSchema.partial().extend({
+  isActive: booleanQuerySchema.optional(),
 });
 
 export const offerSchema = z.object({
@@ -46,7 +64,7 @@ export const reviewSchema = z.object({
 
 export const productFilterSchema = z.object({
   outletId: objectIdSchema.optional(),
-  category: z.enum(['BURGER', 'SIDE', 'BEVERAGE', 'DESSERT']).optional(),
+  category: z.enum(['BURGER', 'SIDE', 'BEVERAGE', 'DESSERT', 'PERI PERI FEST']).optional(),
   isAvailable: booleanQuerySchema.optional(),
   cursor: objectIdSchema.optional(),
   limit: z.coerce.number().int().min(1).max(100).default(20),

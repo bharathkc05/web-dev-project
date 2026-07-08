@@ -6,35 +6,25 @@ import mongoose from 'mongoose';
 // ==========================================
 const productSchema = new mongoose.Schema(
   {
+    masterProductId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'MasterProduct',
+      required: true,
+      index: true,
+    },
     outletId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Outlet',
       required: true,
       index: true,
     },
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    description: {
-      type: String,
-      trim: true,
-      default: '',
-    },
-    category: {
-      type: String,
-      required: true,
-      enum: ['BURGER', 'SIDE', 'BEVERAGE', 'DESSERT'],
-      index: true,
-    },
-    imageUrl: {
-      type: String,
-      default: '',
-    },
     price: {
       type: Number,
       required: true,
+      min: 0,
+    },
+    originalPrice: {
+      type: Number,
       min: 0,
     },
     stock: {
@@ -46,6 +36,11 @@ const productSchema = new mongoose.Schema(
         message: '{VALUE} is not an integer value',
       },
       default: 0,
+    },
+    lowStockThreshold: {
+      type: Number,
+      default: 10,
+      min: 0,
     },
     isAvailable: {
       type: Boolean,
@@ -71,9 +66,10 @@ const productSchema = new mongoose.Schema(
 
 // Compound indexes
 productSchema.index({ outletId: 1, isAvailable: 1 });
-productSchema.index({ category: 1, outletId: 1 });
+// Enforce unique activation per outlet
+productSchema.index({ masterProductId: 1, outletId: 1 }, { unique: true });
 
-export const Product = mongoose.models.Product || mongoose.model('Product', productSchema);
+export const Product = mongoose.models.OutletProduct || mongoose.model('OutletProduct', productSchema);
 
 // ==========================================
 // 2. OFFER MODEL

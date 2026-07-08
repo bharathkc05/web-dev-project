@@ -4,16 +4,18 @@ import {
   getProducts,
   getProductById,
   getPopularProducts,
-  createProduct,
-  updateProduct,
+  activateProduct,
+  updateOutletProduct,
   deleteProduct,
+  getOffers,
   createOffer,
   submitReview,
   applyOffer,
+  getAvailableMasterProducts,
 } from './product.controller.js';
 import {
-  createProductSchema,
-  updateProductSchema,
+  activateProductSchema,
+  updateOutletProductSchema,
   offerSchema,
   reviewSchema,
   productFilterSchema,
@@ -21,7 +23,6 @@ import {
 } from './product.schema.js';
 import authenticate from '../../shared/middleware/authenticate.js';
 import authorize from '../../shared/middleware/authorize.js';
-import singleImageUpload from '../../shared/middleware/upload.js';
 import { validateRequest, validateQuery, validateParams } from '../../shared/middleware/validate.js';
 import asyncHandler from '../../shared/middleware/asyncHandler.js';
 import { ROLES } from '../../shared/constants/roles.js';
@@ -34,24 +35,50 @@ const customerOnly = [authenticate, authorize(ROLES.CUSTOMER)];
 // Public routes
 router.get('/', validateQuery(productFilterSchema), asyncHandler(getProducts));
 router.get('/popular', asyncHandler(getPopularProducts));
-router.get('/:id', validateParams(idParamSchema), asyncHandler(getProductById));
 
-// Protected routes - Product CRUD
-router.post(
-  '/',
+// Protected routes - Outlet Product Activation and Management
+router.get(
+  '/available',
   ...managerOrAdmin,
-  singleImageUpload,
-  validateRequest(createProductSchema),
-  asyncHandler(createProduct)
+  asyncHandler(getAvailableMasterProducts)
 );
+
+router.post(
+  '/activate',
+  ...managerOrAdmin,
+  validateRequest(activateProductSchema),
+  asyncHandler(activateProduct)
+);
+
+// Protected routes - Offers
+router.get(
+  '/offers',
+  ...managerOrAdmin,
+  asyncHandler(getOffers)
+);
+
+router.post(
+  '/offers',
+  ...managerOrAdmin,
+  validateRequest(offerSchema),
+  asyncHandler(createOffer)
+);
+
+router.post(
+  '/offers/validate',
+  authenticate,
+  asyncHandler(applyOffer)
+);
+
+// Dynamic Parameter Routes (Must be at the bottom to avoid shadowing)
+router.get('/:id', validateParams(idParamSchema), asyncHandler(getProductById));
 
 router.put(
   '/:id',
   ...managerOrAdmin,
-  singleImageUpload,
   validateParams(idParamSchema),
-  validateRequest(updateProductSchema),
-  asyncHandler(updateProduct)
+  validateRequest(updateOutletProductSchema),
+  asyncHandler(updateOutletProduct)
 );
 
 router.delete(
@@ -67,20 +94,6 @@ router.post(
   ...customerOnly,
   validateRequest(reviewSchema),
   asyncHandler(submitReview)
-);
-
-// Protected routes - Offers
-router.post(
-  '/offers',
-  ...managerOrAdmin,
-  validateRequest(offerSchema),
-  asyncHandler(createOffer)
-);
-
-router.post(
-  '/offers/validate',
-  authenticate,
-  asyncHandler(applyOffer)
 );
 
 export default router;

@@ -52,7 +52,11 @@ export const deleteCachePattern = async (pattern) => {
     const redis = await getRedisClient();
     const keys = [];
     for await (const key of redis.scanIterator({ MATCH: pattern, COUNT: 100 })) {
-      keys.push(key);
+      if (Array.isArray(key)) {
+        keys.push(...key);
+      } else {
+        keys.push(key);
+      }
     }
     if (keys.length > 0) {
       await redis.del(keys);

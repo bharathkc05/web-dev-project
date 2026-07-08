@@ -50,27 +50,59 @@ export const getAllProducts = async (filters = {}, cursor = null, limit = 20) =>
     return cachedData;
   }
 
-  // Build DB query
-  const query = {};
+  const matchOutlet = {};
   if (filters.outletId) {
-    query.outletId = new mongoose.Types.ObjectId(filters.outletId);
-  }
-  if (filters.category) {
-    query.category = filters.category;
+    matchOutlet.outletId = new mongoose.Types.ObjectId(filters.outletId);
   }
   if (filters.isAvailable !== undefined) {
-    query.isAvailable = filters.isAvailable;
+    matchOutlet.isAvailable = filters.isAvailable;
   }
-
   if (cursor) {
-    query._id = { $lt: new mongoose.Types.ObjectId(cursor) };
+    matchOutlet._id = { $lt: new mongoose.Types.ObjectId(cursor) };
   }
 
-  // Fetch from database
-  const items = await Product.find(query)
-    .sort({ _id: -1 })
-    .limit(limit + 1)
-    .lean();
+  const pipeline = [
+    { $match: matchOutlet },
+    {
+      $lookup: {
+        from: 'masterproducts',
+        localField: 'masterProductId',
+        foreignField: '_id',
+        as: 'master',
+      }
+    },
+    { $unwind: '$master' }
+  ];
+
+  if (filters.category) {
+    pipeline.push({ $match: { 'master.category': filters.category } });
+  }
+
+  pipeline.push({ $sort: { _id: -1 } });
+  pipeline.push({ $limit: limit + 1 });
+
+  pipeline.push({
+    $project: {
+      _id: 1,
+      outletId: 1,
+      masterProductId: 1,
+      price: 1,
+      stock: 1,
+      lowStockThreshold: 1,
+      isAvailable: 1,
+      ratings: 1,
+      createdAt: 1,
+      updatedAt: 1,
+      name: '$master.name',
+      description: '$master.description',
+      category: '$master.category',
+      imageUrl: '$master.imageUrl',
+      isVeg: '$master.isVeg',
+      ingredients: '$master.ingredients',
+    }
+  });
+
+  const items = await Product.aggregate(pipeline);
 
   const hasNextPage = items.length > limit;
   const slicedItems = hasNextPage ? items.slice(0, limit) : items;
@@ -102,7 +134,42 @@ export const getProductById = async (id) => {
     return cachedProduct;
   }
 
-  const product = await Product.findById(id).lean();
+  const pipeline = [
+    { $match: { _id: new mongoose.Types.ObjectId(id) } },
+    {
+      $lookup: {
+        from: 'masterproducts',
+        localField: 'masterProductId',
+        foreignField: '_id',
+        as: 'master',
+      }
+    },
+    { $unwind: '$master' },
+    {
+      $project: {
+        _id: 1,
+        outletId: 1,
+        masterProductId: 1,
+        price: 1,
+        stock: 1,
+        lowStockThreshold: 1,
+        isAvailable: 1,
+        ratings: 1,
+        createdAt: 1,
+        updatedAt: 1,
+        name: '$master.name',
+        description: '$master.description',
+        category: '$master.category',
+        imageUrl: '$master.imageUrl',
+        isVeg: '$master.isVeg',
+        ingredients: '$master.ingredients',
+      }
+    }
+  ];
+
+  const results = await Product.aggregate(pipeline);
+  const product = results[0];
+
   if (!product) {
     throw ApiError.notFound('Product not found');
   }
@@ -112,18 +179,16 @@ export const getProductById = async (id) => {
 };
 
 /**
- * Create product
+ * Activate product for an outlet
  */
-export const createProduct = async (data, imageFile = null) => {
-  let imageUrl = '';
-  if (imageFile) {
-    const uploadResult = await uploadImage(imageFile, 'products');
-    imageUrl = uploadResult.secure_url;
-  }
-
+export const activateProduct = async (data) => {
   const product = await Product.create({
-    ...data,
-    imageUrl,
+    masterProductId: data.masterProductId,
+    outletId: data.outletId,
+    price: data.price,
+    stock: data.stock || 0,
+    lowStockThreshold: data.lowStockThreshold || 10,
+    isAvailable: true,
   });
 
   // Invalidate caches
@@ -133,9 +198,27 @@ export const createProduct = async (data, imageFile = null) => {
 };
 
 /**
- * Update product
+ * Get available master products for an outlet
  */
-export const updateProduct = async (id, data, user, imageFile = null) => {
+export const getAvailableMasterProducts = async (outletId) => {
+  // Get all master product IDs already activated by this outlet
+  const activatedProducts = await Product.find({ outletId }, { masterProductId: 1 }).lean();
+  const activatedIds = activatedProducts.map(p => p.masterProductId);
+
+  // Find all active master products NOT in that list
+  const { MasterProduct } = await import('./../../shared/models/masterProduct.model.js');
+  const available = await MasterProduct.find({
+    _id: { $nin: activatedIds },
+    isActive: true,
+  }).sort({ _id: -1 }).lean();
+
+  return available;
+};
+
+/**
+ * Update outlet product
+ */
+export const updateOutletProduct = async (id, data, user) => {
   const product = await Product.findById(id);
   if (!product) {
     throw ApiError.notFound('Product not found');
@@ -147,17 +230,6 @@ export const updateProduct = async (id, data, user, imageFile = null) => {
   }
 
   const updateFields = { ...data };
-
-  if (imageFile) {
-    // If old image exists, we would ideally delete it
-    if (product.imageUrl) {
-      const publicId = product.imageUrl.split('/').pop().split('.')[0];
-      await deleteImage(`products/${publicId}`).catch(() => {}); // ignore error
-    }
-    
-    const uploadResult = await uploadImage(imageFile, 'products');
-    updateFields.imageUrl = uploadResult.secure_url;
-  }
 
   const updatedProduct = await Product.findByIdAndUpdate(
     id,
@@ -185,16 +257,12 @@ export const softDeleteProduct = async (id, user) => {
     throw ApiError.forbidden('You do not have permission to delete this product');
   }
 
-  const updatedProduct = await Product.findByIdAndUpdate(
-    id,
-    { $set: { isAvailable: false } },
-    { new: true }
-  ).lean();
+  const deletedProduct = await Product.findByIdAndDelete(id).lean();
 
   // Invalidate cache
   await invalidateProductCache(product.outletId, id);
 
-  return updatedProduct;
+  return deletedProduct;
 };
 
 /**
@@ -208,14 +276,13 @@ export const getPopularProducts = async () => {
     return cachedPopular;
   }
 
-  // Aggregate Reviews grouped by product
   let popular = await Review.aggregate([
     { $group: { _id: '$productId', count: { $sum: 1 } } },
     { $sort: { count: -1 } },
     { $limit: 10 },
     {
       $lookup: {
-        from: 'products',
+        from: 'outletproducts',
         localField: '_id',
         foreignField: '_id',
         as: 'product',
@@ -223,13 +290,24 @@ export const getPopularProducts = async () => {
     },
     { $unwind: '$product' },
     {
+      $lookup: {
+        from: 'masterproducts',
+        localField: 'product.masterProductId',
+        foreignField: '_id',
+        as: 'master',
+      }
+    },
+    { $unwind: '$master' },
+    {
       $project: {
         _id: '$product._id',
         outletId: '$product.outletId',
-        name: '$product.name',
-        description: '$product.description',
-        category: '$product.category',
-        imageUrl: '$product.imageUrl',
+        masterProductId: '$product.masterProductId',
+        name: '$master.name',
+        description: '$master.description',
+        category: '$master.category',
+        imageUrl: '$master.imageUrl',
+        isVeg: '$master.isVeg',
         price: '$product.price',
         stock: '$product.stock',
         isAvailable: '$product.isAvailable',
@@ -241,15 +319,38 @@ export const getPopularProducts = async () => {
 
   // Fallback to top rated products if reviews collection is empty/thin
   if (popular.length === 0) {
-    const products = await Product.find({ isAvailable: true })
-      .sort({ 'ratings.avg': -1, 'ratings.count': -1 })
-      .limit(10)
-      .lean();
-      
-    popular = products.map((p) => ({
-      ...p,
-      reviewCount: p.ratings.count,
-    }));
+    const pipeline = [
+      { $match: { isAvailable: true } },
+      { $sort: { 'ratings.avg': -1, 'ratings.count': -1 } },
+      { $limit: 10 },
+      {
+        $lookup: {
+          from: 'masterproducts',
+          localField: 'masterProductId',
+          foreignField: '_id',
+          as: 'master',
+        }
+      },
+      { $unwind: '$master' },
+      {
+        $project: {
+          _id: 1,
+          outletId: 1,
+          masterProductId: 1,
+          price: 1,
+          stock: 1,
+          isAvailable: 1,
+          ratings: 1,
+          name: '$master.name',
+          description: '$master.description',
+          category: '$master.category',
+          imageUrl: '$master.imageUrl',
+          isVeg: '$master.isVeg',
+          reviewCount: '$ratings.count',
+        }
+      }
+    ];
+    popular = await Product.aggregate(pipeline);
   }
 
   await setCache(key, popular, CACHE_TTL_POPULAR);
@@ -312,4 +413,4 @@ export const submitReview = async (productId, userId, orderId, data) => {
   return review.toJSON();
 };
 
-export { createOffer, validateOffer } from './offer.service.js';
+export { createOffer, validateOffer, getOffers } from './offer.service.js';

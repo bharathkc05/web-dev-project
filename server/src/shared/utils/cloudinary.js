@@ -3,10 +3,15 @@ import { v2 as cloudinary } from 'cloudinary';
 import config from '../../config/env.js';
 import logger from './logger.js';
 
-// Configure Cloudinary explicitly
-cloudinary.config({
-  cloudinary_url: config.CLOUDINARY_URL,
-});
+// Configure Cloudinary explicitly (parse from URL)
+if (config.CLOUDINARY_URL) {
+  const parsedUrl = new URL(config.CLOUDINARY_URL);
+  cloudinary.config({
+    cloud_name: parsedUrl.hostname,
+    api_key: parsedUrl.username,
+    api_secret: parsedUrl.password,
+  });
+}
 
 /**
  * Uploads a Buffer (or Multer file object containing a buffer) to Cloudinary.
