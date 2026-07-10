@@ -27,15 +27,11 @@ export const activateProductSchema = z.object({
   masterProductId: objectIdSchema,
   price: z.coerce.number().nonnegative('Price must be a non-negative number'),
   originalPrice: z.coerce.number().nonnegative().optional(),
-  stock: z.coerce.number().int().nonnegative('Stock must be a non-negative integer').default(0),
-  lowStockThreshold: z.coerce.number().int().nonnegative().default(10),
 });
 
 export const updateOutletProductSchema = z.object({
   price: z.coerce.number().nonnegative('Price must be a non-negative number').optional(),
   originalPrice: z.coerce.number().nonnegative().optional(),
-  stock: z.coerce.number().int().nonnegative().optional(),
-  lowStockThreshold: z.coerce.number().int().nonnegative().optional(),
   isAvailable: booleanQuerySchema.optional(),
 });
 
@@ -67,7 +63,7 @@ export const productFilterSchema = z.object({
   category: z.enum(['BURGER', 'SIDE', 'BEVERAGE', 'DESSERT', 'PERI PERI FEST']).optional(),
   isAvailable: booleanQuerySchema.optional(),
   cursor: objectIdSchema.optional(),
-  limit: z.coerce.number().int().min(1).max(100).default(20),
+  limit: z.coerce.number().int().min(1).max(500).default(20),
 });
 
 export const idParamSchema = z.object({

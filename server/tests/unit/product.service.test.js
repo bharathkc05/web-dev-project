@@ -90,10 +90,8 @@ const createTestProduct = (overrides = {}) => ({
   outletId: MOCK_OUTLET_ID,
   name: 'Cheeseburger',
   description: 'Classic cheeseburger',
-  category: 'BURGER',
   imageUrl: 'https://cloudinary.com/cheeseburger.jpg',
   price: 9.99,
-  stock: 50,
   isAvailable: true,
   ratings: { avg: 4.5, count: 10 },
   toJSON() {
@@ -202,8 +200,6 @@ describe('product.service unit tests', () => {
 
       expect(mockCreateProduct).toHaveBeenCalledWith({
         ...productData,
-        stock: 0,
-        lowStockThreshold: 10,
         isAvailable: true,
       });
       expect(mockDeleteCachePattern).toHaveBeenCalledWith('products:*');

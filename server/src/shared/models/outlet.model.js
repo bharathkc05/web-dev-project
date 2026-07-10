@@ -7,6 +7,29 @@ const outletSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    address: {
+      type: String,
+      trim: true,
+    },
+    storeTiming: {
+      type: String,
+      trim: true,
+    },
+    availableServices: [{
+      type: String,
+      enum: ['Takeaway', 'Dine-in', 'Delivery'],
+    }],
+    location: {
+      type: {
+        type: String,
+        enum: ['Point'],
+        required: false
+      },
+      coordinates: {
+        type: [Number],
+        required: false
+      }
+    },
     ownerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -35,7 +58,7 @@ const outletSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
-
 outletSchema.index({ isApproved: 1, isActive: 1, createdAt: -1 });
+outletSchema.index({ location: '2dsphere' });
 
 export default mongoose.models.Outlet || mongoose.model('Outlet', outletSchema);

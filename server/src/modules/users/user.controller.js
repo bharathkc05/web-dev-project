@@ -1,3 +1,5 @@
+import Outlet from '../../shared/models/outlet.model.js';
+import { ApiResponse } from '../../shared/utils/ApiResponse.js';
 import {
   approveOutlet as approveOutletService,
   deleteUser as deleteUserService,
@@ -7,6 +9,8 @@ import {
   getUsers as getUsersService,
   suspendOutlet as suspendOutletService,
   suspendUser as suspendUserService,
+  unsuspendUser as unsuspendUserService,
+  assignManager as assignManagerService,
 } from './user.service.js';
 
 export const getUsers = async (req, res) => {
@@ -19,6 +23,16 @@ export const suspendUser = async (req, res) => {
   res.status(200).json({ success: true, data: result });
 };
 
+export const unsuspendUser = async (req, res) => {
+  const result = await unsuspendUserService(req.params.id, req.user.userId);
+  res.status(200).json({ success: true, data: result });
+};
+
+export const assignManager = async (req, res) => {
+  const result = await assignManagerService(req.params.id, req.body.outletId, req.user.userId);
+  res.status(200).json({ success: true, data: result });
+};
+
 export const deleteUser = async (req, res) => {
   const result = await deleteUserService(req.params.id, req.user.userId);
   res.status(200).json({ success: true, data: result });
@@ -27,6 +41,29 @@ export const deleteUser = async (req, res) => {
 export const getOutlets = async (req, res) => {
   const result = await getOutletsService(req.query);
   res.status(200).json({ success: true, data: result });
+};
+
+export const createOutlet = async (req, res, next) => {
+  try {
+    const { name, address, storeTiming, availableServices, latitude, longitude } = req.body;
+
+    const newOutlet = await Outlet.create({
+      name,
+      address,
+      storeTiming,
+      availableServices,
+      location: {
+        type: 'Point',
+        coordinates: [longitude, latitude]
+      },
+      isApproved: true,
+      isActive: true
+    });
+
+    res.status(201).json(ApiResponse.created(newOutlet, 'Outlet created successfully'));
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const approveOutlet = async (req, res) => {

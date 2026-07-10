@@ -85,7 +85,6 @@ const createTestProduct = (overrides = {}) => ({
   outletId: MOCK_OUTLET_ID,
   name: 'Burger',
   price: 5.99,
-  stock: 20,
   isAvailable: true,
   ...overrides,
 });
@@ -247,7 +246,6 @@ describe('order.service unit tests', () => {
       expect(mockCreateOrder).toHaveBeenCalled();
       expect(mockCreateRazorpayOrder).not.toHaveBeenCalled();
       expect(mockDeleteOneCart).toHaveBeenCalledWith({ userId: MOCK_USER_ID });
-      expect(mockFindByIdAndUpdateProduct).toHaveBeenCalled();
       expect(mockPushBullMQJob).toHaveBeenCalledWith(order._id, 'ORDER_CONFIRMED');
       expect(mockEmitToRoom).toHaveBeenCalledWith(MOCK_OUTLET_ID, 'ORDER_CREATED', order.toJSON());
       expect(result.paymentStatus).toBe('COD');
@@ -270,7 +268,6 @@ describe('order.service unit tests', () => {
       expect(order.paymentStatus).toBe('PAID');
       expect(order.orderStatus).toBe('ACCEPTED');
       expect(mockDeleteOneCart).toHaveBeenCalledWith({ userId: MOCK_USER_ID });
-      expect(mockFindByIdAndUpdateProduct).toHaveBeenCalled();
       expect(mockPushBullMQJob).toHaveBeenCalledWith(MOCK_ORDER_ID, 'ORDER_CONFIRMED');
       expect(mockEmitToRoom).toHaveBeenCalledWith(MOCK_OUTLET_ID, 'ORDER_CREATED', order.toJSON());
       expect(result.paymentStatus).toBe('PAID');
@@ -304,7 +301,6 @@ describe('order.service unit tests', () => {
       const result = await updateOrderStatus(MOCK_ORDER_ID, 'CANCELLED', manager);
 
       expect(mockInitiateRefund).toHaveBeenCalledWith('pay-1', 12.58);
-      expect(mockFindByIdAndUpdateProduct).toHaveBeenCalled(); // Restore stock
       expect(order.orderStatus).toBe('CANCELLED');
       expect(order.paymentStatus).toBe('REFUNDED');
       expect(mockEmitToRoom).toHaveBeenCalledTimes(4); // Specific events + generic events for manager and customer

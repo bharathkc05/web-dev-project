@@ -17,14 +17,14 @@ const masterProductSchema = new mongoose.Schema(
       default: '',
     },
     category: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Category',
       required: true,
-      enum: ['BURGERS', 'WRAPS', 'SNACKS', 'BEVERAGES', 'DESSERTS', 'BK CAFE', 'MEALS'],
       index: true,
     },
     quickTab: {
-      type: String,
-      enum: ['PERI PERI FEST', 'CRAZY DEALS', 'STARTING @ 59', 'MIX N MATCH COMBOS', 'WHOPPER DELUXE', 'ORIGINAL WHOPPER', 'SUPER SAVER MEALS', 'BURGERS & WRAPS', 'SNACKS', 'BEVERAGES', 'DESSERTS', 'BK CAFE'],
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'QuickTab',
       index: true,
     },
     isVeg: {

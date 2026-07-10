@@ -30,6 +30,7 @@ export const globalLimiter = (req, res, next) => {
       legacyHeaders: false,
       keyGenerator: (req) => req.ip,
       handler: createRetryAfterHandler('Too many requests, please try again later'),
+      validate: { default: false },
     });
   }
   return globalLimiterMiddleware(req, res, next);
@@ -51,6 +52,7 @@ export const authLimiter = (req, res, next) => {
       legacyHeaders: false,
       keyGenerator: (req) => req.ip,
       handler: createRetryAfterHandler('Too many login attempts, please try again later'),
+      validate: { default: false },
     });
   }
   return authLimiterMiddleware(req, res, next);

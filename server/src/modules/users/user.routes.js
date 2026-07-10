@@ -15,6 +15,9 @@ import {
   getUsers,
   suspendOutlet,
   suspendUser,
+  unsuspendUser,
+  assignManager,
+  createOutlet,
 } from './user.controller.js';
 import {
   auditLogFilterSchema,
@@ -22,6 +25,8 @@ import {
   outletFilterSchema,
   suspendUserSchema,
   userFilterSchema,
+  createOutletSchema,
+  assignManagerSchema,
 } from './user.schema.js';
 
 const router = Router();
@@ -35,9 +40,23 @@ router.patch(
   validateRequest(suspendUserSchema),
   asyncHandler(suspendUser)
 );
+router.patch(
+  '/admin/users/:id/unsuspend',
+  ...adminOnly,
+  validateParams(idParamSchema),
+  asyncHandler(unsuspendUser)
+);
+router.patch(
+  '/admin/users/:id/assign-manager',
+  ...adminOnly,
+  validateParams(idParamSchema),
+  validateRequest(assignManagerSchema),
+  asyncHandler(assignManager)
+);
 router.delete('/admin/users/:id', ...adminOnly, validateParams(idParamSchema), asyncHandler(deleteUser));
 
 router.get('/admin/outlets', ...adminOnly, validateQuery(outletFilterSchema), asyncHandler(getOutlets));
+router.post('/admin/outlets', ...adminOnly, validateRequest(createOutletSchema), asyncHandler(createOutlet));
 router.patch('/admin/outlets/:id/approve', ...adminOnly, validateParams(idParamSchema), asyncHandler(approveOutlet));
 router.patch('/admin/outlets/:id/suspend', ...adminOnly, validateParams(idParamSchema), asyncHandler(suspendOutlet));
 

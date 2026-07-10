@@ -87,8 +87,6 @@ export const getAllProducts = async (filters = {}, cursor = null, limit = 20) =>
       outletId: 1,
       masterProductId: 1,
       price: 1,
-      stock: 1,
-      lowStockThreshold: 1,
       isAvailable: 1,
       ratings: 1,
       createdAt: 1,
@@ -96,6 +94,7 @@ export const getAllProducts = async (filters = {}, cursor = null, limit = 20) =>
       name: '$master.name',
       description: '$master.description',
       category: '$master.category',
+      quickTab: '$master.quickTab',
       imageUrl: '$master.imageUrl',
       isVeg: '$master.isVeg',
       ingredients: '$master.ingredients',
@@ -151,8 +150,6 @@ export const getProductById = async (id) => {
         outletId: 1,
         masterProductId: 1,
         price: 1,
-        stock: 1,
-        lowStockThreshold: 1,
         isAvailable: 1,
         ratings: 1,
         createdAt: 1,
@@ -160,6 +157,7 @@ export const getProductById = async (id) => {
         name: '$master.name',
         description: '$master.description',
         category: '$master.category',
+        quickTab: '$master.quickTab',
         imageUrl: '$master.imageUrl',
         isVeg: '$master.isVeg',
         ingredients: '$master.ingredients',
@@ -186,8 +184,6 @@ export const activateProduct = async (data) => {
     masterProductId: data.masterProductId,
     outletId: data.outletId,
     price: data.price,
-    stock: data.stock || 0,
-    lowStockThreshold: data.lowStockThreshold || 10,
     isAvailable: true,
   });
 
@@ -195,6 +191,31 @@ export const activateProduct = async (data) => {
   await invalidateProductCache(product.outletId);
 
   return product.toJSON();
+};
+
+/**
+ * Activate ALL available products for an outlet
+ */
+export const activateAllProductsForOutlet = async (outletId) => {
+  const availableProducts = await getAvailableMasterProducts(outletId);
+  
+  if (!availableProducts.length) {
+    return { addedCount: 0 };
+  }
+
+  const productsToInsert = availableProducts.map(masterProduct => ({
+    masterProductId: masterProduct._id,
+    outletId: new mongoose.Types.ObjectId(outletId),
+    price: masterProduct.basePrice,
+    isAvailable: true,
+  }));
+
+  await Product.insertMany(productsToInsert);
+
+  // Invalidate caches
+  await invalidateProductCache(outletId);
+
+  return { addedCount: productsToInsert.length };
 };
 
 /**
@@ -306,10 +327,10 @@ export const getPopularProducts = async () => {
         name: '$master.name',
         description: '$master.description',
         category: '$master.category',
+        quickTab: '$master.quickTab',
         imageUrl: '$master.imageUrl',
         isVeg: '$master.isVeg',
         price: '$product.price',
-        stock: '$product.stock',
         isAvailable: '$product.isAvailable',
         ratings: '$product.ratings',
         reviewCount: '$count',
@@ -338,12 +359,12 @@ export const getPopularProducts = async () => {
           outletId: 1,
           masterProductId: 1,
           price: 1,
-          stock: 1,
           isAvailable: 1,
           ratings: 1,
           name: '$master.name',
           description: '$master.description',
           category: '$master.category',
+          quickTab: '$master.quickTab',
           imageUrl: '$master.imageUrl',
           isVeg: '$master.isVeg',
           reviewCount: '$ratings.count',

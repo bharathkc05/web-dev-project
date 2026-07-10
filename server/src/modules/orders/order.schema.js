@@ -20,6 +20,11 @@ export const placeOrderSchema = z.object({
     errorMap: () => ({ message: 'Payment mode must be UPI, CARD, NETBANKING, or COD' }),
   }),
   couponCode: z.string().trim().toUpperCase().optional(),
+  mockItems: z.array(z.object({
+    productId: z.string(),
+    qty: z.number(),
+    outletId: z.string()
+  })).optional(),
 });
 
 export const verifyPaymentSchema = z.object({

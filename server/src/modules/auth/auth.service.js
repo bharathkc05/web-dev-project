@@ -97,17 +97,10 @@ export const createUser = async (data) => {
 export const loginUser = async (emailInput, password, ip = 'unknown') => {
   const email = normalizeEmail(emailInput);
   const redis = await getRedisClient();
-  const attempts = Number((await redis.get(loginFailKey(ip, email))) || 0);
-
-  if (attempts >= MAX_LOGIN_ATTEMPTS) {
-    throw ApiError.tooManyRequests('Too many login attempts. Try again later.');
-  }
-
   const user = await User.findOne({ email }).select('+passwordHash');
   const isValidPassword = user ? await bcrypt.compare(password, user.passwordHash) : false;
 
   if (!user || !isValidPassword) {
-    await recordLoginFailure(redis, email, ip);
     throw ApiError.unauthorized(USER_ERRORS.INVALID_CREDENTIALS);
   }
 
@@ -204,6 +197,10 @@ export const addAddress = async (userId, addressData) => {
   const user = await User.findOne({ _id: userId, isActive: true });
   if (!user) {
     throw ApiError.notFound(USER_ERRORS.NOT_FOUND);
+  }
+
+  if (user.savedAddresses.length >= 2) {
+    throw ApiError.badRequest('You can only have a maximum of 2 delivery addresses');
   }
 
   // If isDefault is true or this is the first address, unset isDefault on other addresses

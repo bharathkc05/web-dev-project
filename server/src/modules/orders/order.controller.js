@@ -32,17 +32,21 @@ export const removeFromCart = async (req, res, next) => {
 };
 
 export const placeOrder = async (req, res, next) => {
+  console.log('CONTROLLER placeOrder hit', req.body);
   try {
-    const { address, instructions, paymentMode, couponCode } = req.body;
+    const { address, instructions, paymentMode, couponCode, mockItems } = req.body;
     const result = await orderService.placeOrder(
       req.user.userId,
       address,
       instructions,
       paymentMode,
-      couponCode
+      couponCode,
+      mockItems
     );
+    console.log('CONTROLLER placeOrder success', result?._id);
     res.status(201).json(ApiResponse.created(result, 'Order placed successfully'));
   } catch (error) {
+    console.error('CONTROLLER placeOrder error', error);
     next(error);
   }
 };

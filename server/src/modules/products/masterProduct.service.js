@@ -64,3 +64,18 @@ export const deleteMasterProduct = async (id) => {
   await MasterProduct.findByIdAndDelete(id);
   return { message: 'Master product deleted successfully' };
 };
+
+export const toggleMasterProductStatus = async (id, adminId) => {
+  const product = await MasterProduct.findById(id);
+  if (!product) {
+    throw ApiError.notFound('Master product not found');
+  }
+
+  const updatedProduct = await MasterProduct.findByIdAndUpdate(
+    id,
+    { $set: { isActive: !product.isActive } },
+    { new: true }
+  ).lean();
+
+  return updatedProduct;
+};

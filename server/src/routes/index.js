@@ -6,6 +6,7 @@ import productRouter from '../modules/products/product.routes.js';
 import masterProductRouter from '../modules/products/masterProduct.routes.js';
 import orderRouter from '../modules/orders/order.routes.js';
 import outletRouter from '../modules/outlets/outlet.routes.js';
+import catalogueRouter from '../modules/catalogue/catalogue.routes.js';
 
 const router = Router();
 
@@ -25,6 +26,7 @@ router.use('/auth', authRouter);
 router.use('/outlets', outletRouter);
 router.use('/products', productRouter);
 router.use('/admin/master-products', masterProductRouter);
+router.use('/', catalogueRouter);
 router.use('/', userRouter);  // mounts /admin/users, /admin/outlets, etc.
 router.use('/', orderRouter); // mounts /cart/add, /cart, /orders, etc.
 

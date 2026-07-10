@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #ed1c24;
+  --color-primary-dark: #d1151c;
+  --color-surface: #fcf9f8;
+  --color-surface-dim: #dcd9d9;
+  --color-surface-bright: #fcf9f8;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f6f3f2;
+  --color-surface-container: #f0eded;
+  --color-surface-container-high: #eae8e8;
+  --color-surface-container-highest: #e4e2e2;
+  --color-on-surface: #1c1b1b;
+  --color-on-surface-variant: #494544;
+  --color-outline: #7a7574;
+  --color-outline-variant: #cbc4c3;
+  --color-brown: #502314;
+  --color-orange: #f2a900;
+  --color-footer-bg: #333333;
+  --color-footer-text: #d4d4d4;
+  
+  --font-sans: "Manrope", sans-serif;
+  --font-display: "Bricolage Grotesque", sans-serif;
+  --font-label: "IBM Plex Sans", sans-serif;
+  --radius-8xl: 2rem;
+}
+
+@layer base {
+  body {
+    background-color: #f5ebdc;
+    color: #1c1b1b;
+    font-family: var(--font-sans);
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 800;
+  }
+
+  /* Hide scrollbar globally */
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+  }
+  
+  *::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
+}
+
+@layer components {
+  .placeholder-box {
+    @apply flex items-center justify-center bg-surface-container-highest border-2 border-dashed border-outline text-on-surface-variant font-semibold text-center p-4;
+  }
+  
+  .toggle-checkbox:checked {
+    right: 0;
+    border-color: #502314;
+  }
+  
+  .toggle-checkbox:checked + .toggle-label {
+    background-color: #502314;
+  }
+  
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .bk-profile-wrapper {
+    font-size: 62.5%;
+    --closeImage: url(https://cdn.yellowmessenger.com/files/images/close.png);
+    margin: 0;
+    padding: 0;
+    outline: none;
+    box-sizing: inherit;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    display: flex;
+  }
+}

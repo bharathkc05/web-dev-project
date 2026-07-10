@@ -27,21 +27,6 @@ const productSchema = new mongoose.Schema(
       type: Number,
       min: 0,
     },
-    stock: {
-      type: Number,
-      required: true,
-      min: 0,
-      validate: {
-        validator: Number.isInteger,
-        message: '{VALUE} is not an integer value',
-      },
-      default: 0,
-    },
-    lowStockThreshold: {
-      type: Number,
-      default: 10,
-      min: 0,
-    },
     isAvailable: {
       type: Boolean,
       default: true,
@@ -69,7 +54,7 @@ productSchema.index({ outletId: 1, isAvailable: 1 });
 // Enforce unique activation per outlet
 productSchema.index({ masterProductId: 1, outletId: 1 }, { unique: true });
 
-export const Product = mongoose.models.OutletProduct || mongoose.model('OutletProduct', productSchema);
+export const Product = mongoose.models.Product || mongoose.model('Product', productSchema, 'outletproducts');
 
 // ==========================================
 // 2. OFFER MODEL

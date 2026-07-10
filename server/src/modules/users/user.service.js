@@ -6,6 +6,8 @@ import User from '../auth/auth.model.js';
 import AuditLog from '../../shared/models/auditLog.model.js';
 import Outlet from '../../shared/models/outlet.model.js';
 import Order from '../../shared/models/order.model.js';
+import { Product } from '../products/product.model.js';
+import { MasterProduct } from '../../shared/models/masterProduct.model.js';
 import { ApiError } from '../../shared/utils/ApiError.js';
 import { deleteCache } from '../../shared/utils/cacheHelper.js';
 
@@ -153,6 +155,77 @@ export const deleteUser = async (targetId, actorId) => {
   return user;
 };
 
+export const unsuspendUser = async (targetId, actorId) => {
+  const actorRole = await getActorRole(actorId);
+
+  const user = await User.findOneAndUpdate(
+    { _id: targetId, isDeleted: { $ne: true } },
+    {
+      $set: {
+        isActive: true,
+      },
+      $unset: {
+        suspendedAt: 1,
+        suspendedBy: 1,
+        suspensionReason: 1,
+      },
+    },
+    { new: true }
+  ).lean();
+
+  if (!user) {
+    throw ApiError.notFound(USER_ERRORS.NOT_FOUND);
+  }
+
+  await invalidateUserProfileCache(targetId);
+  await writeAuditLog({
+    actorId,
+    role: actorRole,
+    action: 'USER_UNSUSPEND',
+    targetType: 'USER',
+    targetId,
+  });
+
+  return user;
+};
+
+export const assignManager = async (targetId, outletId, actorId) => {
+  const actorRole = await getActorRole(actorId);
+
+  // Verify outlet exists
+  const outlet = await Outlet.findOne({ _id: outletId, deletedAt: null }).lean();
+  if (!outlet) {
+    throw ApiError.notFound('Outlet not found');
+  }
+
+  const user = await User.findOneAndUpdate(
+    { _id: targetId, isDeleted: { $ne: true } },
+    {
+      $set: {
+        role: 'OUTLET_MANAGER',
+        outletId: outletId,
+      },
+    },
+    { new: true }
+  ).lean();
+
+  if (!user) {
+    throw ApiError.notFound(USER_ERRORS.NOT_FOUND);
+  }
+
+  await invalidateUserProfileCache(targetId);
+  await writeAuditLog({
+    actorId,
+    role: actorRole,
+    action: 'USER_ASSIGN_MANAGER',
+    targetType: 'USER',
+    targetId,
+    metadata: { outletId },
+  });
+
+  return user;
+};
+
 export const getOutlets = async (filters = {}) => {
   const page = filters.page || 1;
   const limit = filters.limit || 20;
@@ -166,17 +239,46 @@ export const getOutlets = async (filters = {}) => {
     query.isActive = filters.isActive;
   }
 
-  const [items, total] = await Promise.all([
+  const [items, total, totalMasterProducts] = await Promise.all([
     Outlet.find(query)
       .sort({ createdAt: -1, _id: -1 })
       .skip((page - 1) * limit)
       .limit(limit)
       .lean(),
     Outlet.countDocuments(query),
+    MasterProduct.countDocuments({ isActive: true }),
   ]);
 
+  const outletIds = items.map(outlet => outlet._id);
+
+  const productCounts = await Product.aggregate([
+    { $match: { outletId: { $in: outletIds } } },
+    {
+      $group: {
+        _id: '$outletId',
+        totalActivatedCount: { $sum: 1 },
+        activeProductsCount: { $sum: { $cond: ['$isAvailable', 1, 0] } },
+      },
+    },
+  ]);
+
+  const countsMap = productCounts.reduce((acc, curr) => {
+    acc[curr._id.toString()] = curr;
+    return acc;
+  }, {});
+
+  const enrichedItems = items.map(outlet => {
+    const counts = countsMap[outlet._id.toString()] || { totalActivatedCount: 0, activeProductsCount: 0 };
+    return {
+      ...outlet,
+      activeProductsCount: counts.activeProductsCount,
+      totalActivatedCount: counts.totalActivatedCount,
+      totalMasterProducts,
+    };
+  });
+
   return {
-    items,
+    items: enrichedItems,
     pageInfo: {
       page,
       limit,
@@ -248,7 +350,10 @@ export const suspendOutlet = async (outletId, actorId) => {
 };
 
 export const getPlatformAnalytics = async () => {
-  const [totalUsers, totalOrders, revenueSummary, activeOutlets] = await Promise.all([
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const [totalUsers, totalOrders, revenueSummary, activeOutlets, masterCatalogueSize, topActivatedProducts, dailyOrders] = await Promise.all([
     User.countDocuments({ isDeleted: { $ne: true } }),
     Order.countDocuments(),
     Order.aggregate([
@@ -261,6 +366,32 @@ export const getPlatformAnalytics = async () => {
       },
     ]),
     Outlet.countDocuments({ isActive: true, deletedAt: null }),
+    MasterProduct.countDocuments(),
+    Product.aggregate([
+      { $group: { _id: '$masterProductId', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 5 },
+      { $lookup: { from: 'masterproducts', localField: '_id', foreignField: '_id', as: 'master' } },
+      { $unwind: '$master' },
+      { $project: { _id: 1, count: 1, name: '$master.name' } }
+    ]),
+    Order.aggregate([
+      { $match: { createdAt: { $gte: thirtyDaysAgo } } },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+          orders: { $sum: 1 },
+        }
+      },
+      { $sort: { _id: 1 } },
+      {
+        $project: {
+          _id: 0,
+          date: '$_id',
+          orders: 1
+        }
+      }
+    ])
   ]);
 
   return {
@@ -268,6 +399,9 @@ export const getPlatformAnalytics = async () => {
     totalRevenue: revenueSummary[0]?.totalRevenue || 0,
     totalOrders,
     activeOutlets,
+    masterCatalogueSize,
+    topActivatedProducts,
+    dailyOrders,
   };
 };
 

@@ -40,6 +40,15 @@ export const activateProduct = async (req, res, next) => {
   }
 };
 
+export const activateAllProducts = async (req, res, next) => {
+  try {
+    const result = await productService.activateAllProductsForOutlet(req.user.outletId);
+    res.status(201).json(ApiResponse.created(result, `${result.addedCount} products activated successfully`));
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getAvailableMasterProducts = async (req, res, next) => {
   try {
     const result = await productService.getAvailableMasterProducts(req.user.outletId);

@@ -105,48 +105,64 @@ export const removeFromCart = async (userId, productId) => {
 /**
  * Place a new Order
  */
-export const placeOrder = async (userId, address, instructions, paymentMode, couponCode = null) => {
-  const cart = await Cart.findOne({ userId }).populate('items.productId');
+export const placeOrder = async (userId, address, instructions, paymentMode, couponCode = null, mockItems = null) => {
+  console.log('placeOrder START', { userId, paymentMode });
+  let cart;
+  
+  if (mockItems && mockItems.length > 0) {
+    console.log('Using mockItems bypass');
+    cart = {
+      userId,
+      outletId: mockItems[0].outletId, 
+      items: mockItems
+    };
+    
+    for (let i = 0; i < cart.items.length; i++) {
+      console.log('Fetching product for item', i, cart.items[i].productId);
+      const product = await Product.findById(cart.items[i].productId).populate('masterProductId');
+      cart.items[i].productId = product;
+    }
+  } else {
+    console.log('Fetching cart from DB');
+    cart = await Cart.findOne({ userId }).populate({
+      path: 'items.productId',
+      populate: { path: 'masterProductId' }
+    });
+  }
 
   if (!cart || cart.items.length === 0) {
     throw ApiError.badRequest('Your cart is empty');
   }
-
-  // Validate stock and construct snapshotted order items
+  
   const orderItems = [];
   let subtotal = 0;
 
   for (const item of cart.items) {
     const product = item.productId;
     if (!product || !product.isAvailable) {
-      throw ApiError.badRequest(`Product ${product?.name || 'Unknown'} is currently unavailable`);
-    }
-
-    if (product.stock < item.qty) {
-      throw ApiError.badRequest(`Insufficient stock for ${product.name}. Available stock: ${product.stock}`);
+      throw ApiError.badRequest(`Product ${product?.masterProductId?.name || 'Unknown'} is currently unavailable`);
     }
 
     orderItems.push({
       productId: product._id,
-      name: product.name,
-      price: product.price, // snapshotted price
+      name: product.masterProductId?.name || 'Unknown Product',
+      price: product.price,
       qty: item.qty,
     });
 
     subtotal += product.price * item.qty;
   }
 
-  // Handle Coupon Offer details
   let discount = 0;
   if (couponCode) {
     const offer = await validateOffer(couponCode, cart.outletId, subtotal);
     discount = calculateDiscount(offer, cart.items, subtotal);
   }
 
-  const tax = (subtotal - discount) * 0.05; // 5% standard GST
+  const tax = (subtotal - discount) * 0.05; 
   const totalAmount = subtotal - discount + tax;
 
-  // Create Order document
+  console.log('Creating order document in DB');
   const order = await Order.create({
     userId,
     outletId: cart.outletId,
@@ -161,26 +177,21 @@ export const placeOrder = async (userId, address, instructions, paymentMode, cou
     instructions,
   });
 
-  // Handle online payments vs COD
   if (paymentMode === 'COD') {
-    // Clear user cart immediately
+    console.log('Deleting cart');
     await Cart.deleteOne({ userId });
 
-    // Decrement inventory stock
-    for (const item of orderItems) {
-      await Product.findByIdAndUpdate(item.productId, { $inc: { stock: -item.qty } });
-    }
-
-    // Trigger events & workers
-    await pushBullMQJob(order._id, 'ORDER_CONFIRMED');
+    console.log('Pushing to bullmq');
+    pushBullMQJob(order._id, 'ORDER_CONFIRMED').catch(e => console.error('BullMQ Error:', e));
+    console.log('Emitting socket');
     emitToRoom(String(order.outletId), SOCKET_EVENTS.ORDER_CREATED, order.toJSON());
   } else {
-    // Create Razorpay Order
     const rzpOrderId = await createRazorpayOrder(order.totalAmount, order._id);
     order.razorpayOrderId = rzpOrderId;
     await order.save();
   }
 
+  console.log('placeOrder END');
   return order.toJSON();
 };
 
@@ -206,11 +217,6 @@ export const verifyPayment = async (orderId, userId, razorpayData) => {
     order.orderStatus = ORDER_STATUS.ACCEPTED;
     order.razorpayPaymentId = razorpay_payment_id;
     await order.save();
-
-    // Decrement stock
-    for (const item of order.items) {
-      await Product.findByIdAndUpdate(item.productId, { $inc: { stock: -item.qty } });
-    }
 
     // Clear cart
     await Cart.deleteOne({ userId });
@@ -257,11 +263,6 @@ export const updateOrderStatus = async (orderId, status, user) => {
       await initiateRefund(order.razorpayPaymentId, order.totalAmount);
       order.paymentStatus = PAYMENT_STATUS.REFUNDED;
     }
-
-    // Return items to stock inventory
-    for (const item of order.items) {
-      await Product.findByIdAndUpdate(item.productId, { $inc: { stock: item.qty } });
-    }
   }
 
   order.orderStatus = status;
@@ -294,6 +295,8 @@ export const getOrders = async (user, filters = {}, page = 1, limit = 20) => {
   } else if (user.role === ROLES.ADMIN && filters.outletId) {
     query.outletId = filters.outletId;
   }
+  
+  console.log('getOrders query:', query, 'user role:', user.role);
 
   if (filters.orderStatus) {
     query.orderStatus = filters.orderStatus;

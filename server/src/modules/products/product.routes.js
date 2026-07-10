@@ -5,6 +5,7 @@ import {
   getProductById,
   getPopularProducts,
   activateProduct,
+  activateAllProducts,
   updateOutletProduct,
   deleteProduct,
   getOffers,
@@ -48,6 +49,12 @@ router.post(
   ...managerOrAdmin,
   validateRequest(activateProductSchema),
   asyncHandler(activateProduct)
+);
+
+router.post(
+  '/activate-all',
+  ...managerOrAdmin,
+  asyncHandler(activateAllProducts)
 );
 
 // Protected routes - Offers

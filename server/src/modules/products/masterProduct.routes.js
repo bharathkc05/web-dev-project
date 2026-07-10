@@ -32,4 +32,10 @@ router.route('/:id')
     masterProductController.deleteMasterProduct
   );
 
+router.route('/:id/status')
+  .patch(
+    validateParams(idParamSchema),
+    masterProductController.toggleMasterProductStatus
+  );
+
 export default router;

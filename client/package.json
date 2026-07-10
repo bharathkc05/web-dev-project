@@ -10,19 +10,33 @@
     "test": "vitest --coverage"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.51.1",
+    "axios": "^1.18.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.23.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-hot-toast": "^2.6.0",
     "react-router-dom": "^6.25.1",
-    "zustand": "^4.5.4",
-    "axios": "^1.7.2",
-    "@tanstack/react-query": "^5.51.1"
+    "recharts": "^3.9.2",
+    "socket.io-client": "^4.8.3",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3",
+    "zustand": "^4.5.4"
   },
   "devDependencies": {
+    "@tailwindcss/container-queries": "^0.1.1",
+    "@tailwindcss/forms": "^0.5.11",
+    "@tailwindcss/postcss": "^4.3.2",
+    "@tanstack/react-query-devtools": "^5.101.2",
     "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.5.2",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.35.0",
     "eslint-plugin-react-hooks": "^4.6.2",
+    "postcss": "^8.5.16",
     "prettier": "^3.3.3",
+    "tailwindcss": "^4.3.2",
     "vite": "^5.3.4",
     "vitest": "^2.0.4"
   }

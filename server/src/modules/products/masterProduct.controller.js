@@ -36,3 +36,12 @@ export const deleteMasterProduct = async (req, res, next) => {
     next(error);
   }
 };
+
+export const toggleMasterProductStatus = async (req, res, next) => {
+  try {
+    const product = await masterProductService.toggleMasterProductStatus(req.params.id, req.user.userId);
+    res.status(200).json(ApiResponse.ok(product, 'Master product status toggled successfully'));
+  } catch (error) {
+    next(error);
+  }
+};
