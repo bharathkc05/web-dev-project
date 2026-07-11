@@ -3,7 +3,8 @@ import { Offer } from './product.model.js';
 import { ApiError } from '../../shared/utils/ApiError.js';
 
 /**
- * Validate offer code
+ * Validate offer code (read-only — for preview/UI display).
+ * Does NOT increment usedCount.
  * @param {string} code - Coupon offer code
  * @param {string} outletId - Outlet ID
  * @param {number} subtotal - Subtotal amount of the order
@@ -29,6 +30,56 @@ export const validateOffer = async (code, outletId, subtotal) => {
   }
 
   if (subtotal < offer.minOrderValue) {
+    throw ApiError.badRequest(`Minimum order value of $${offer.minOrderValue} is required to use this offer`);
+  }
+
+  return offer.toJSON();
+};
+
+/**
+ * Atomically validate AND consume one usage of an offer.
+ * Uses findOneAndUpdate with $inc to prevent race conditions
+ * where two concurrent requests could both pass the usedCount check.
+ * @param {string} code - Coupon offer code
+ * @param {string} outletId - Outlet ID
+ * @param {number} subtotal - Subtotal amount of the order
+ * @returns {Promise<Object>} - Validated Offer document (plain object) with usedCount already incremented
+ */
+export const validateAndUseOffer = async (code, outletId, subtotal) => {
+  const now = new Date();
+
+  // Atomically find a valid offer and increment usedCount in a single operation.
+  // The $expr condition ensures usedCount < usageLimit is checked at the DB level.
+  const offer = await Offer.findOneAndUpdate(
+    {
+      outletId,
+      code: code.toUpperCase(),
+      expiryDate: { $gt: now },
+      $expr: { $lt: ['$usedCount', '$usageLimit'] },
+    },
+    { $inc: { usedCount: 1 } },
+    { new: true }
+  );
+
+  if (!offer) {
+    // Determine the specific failure reason for a helpful error message
+    const existingOffer = await Offer.findOne({ outletId, code: code.toUpperCase() });
+    if (!existingOffer) {
+      throw ApiError.notFound('Offer code not found for this outlet');
+    }
+    if (existingOffer.expiryDate < now) {
+      throw ApiError.badRequest('Offer has expired');
+    }
+    if (existingOffer.usedCount >= existingOffer.usageLimit) {
+      throw ApiError.badRequest('Offer usage limit reached');
+    }
+    // Fallback — should not reach here
+    throw ApiError.badRequest('Offer is not valid');
+  }
+
+  if (subtotal < offer.minOrderValue) {
+    // Rollback the usage increment since the order doesn't qualify
+    await Offer.findByIdAndUpdate(offer._id, { $inc: { usedCount: -1 } });
     throw ApiError.badRequest(`Minimum order value of $${offer.minOrderValue} is required to use this offer`);
   }
 
@@ -104,6 +155,7 @@ export const getOffers = async (outletId) => {
 
 export default {
   validateOffer,
+  validateAndUseOffer,
   calculateDiscount,
   createOffer,
   getOffers,

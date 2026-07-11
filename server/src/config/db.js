@@ -22,12 +22,6 @@ const registerConnectionListeners = () => {
     logger.warn('MongoDB disconnected');
   });
 
-  process.on('SIGINT', async () => {
-    await disconnectDB();
-    logger.info('MongoDB connection closed due to app termination');
-    process.exit(0);
-  });
-
   hasRegisteredListeners = true;
 };
 

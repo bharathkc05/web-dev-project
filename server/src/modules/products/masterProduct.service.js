@@ -65,7 +65,7 @@ export const deleteMasterProduct = async (id) => {
   return { message: 'Master product deleted successfully' };
 };
 
-export const toggleMasterProductStatus = async (id, adminId) => {
+export const toggleMasterProductStatus = async (id) => {
   const product = await MasterProduct.findById(id);
   if (!product) {
     throw ApiError.notFound('Master product not found');

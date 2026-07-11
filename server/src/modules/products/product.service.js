@@ -1,9 +1,9 @@
 // server/src/modules/products/product.service.js
 import mongoose from 'mongoose';
-import { Product, Offer, Review } from './product.model.js';
-import Order from '../../shared/models/order.model.js';
+import { Product, Review } from './product.model.js';
+import { Order } from '../orders/order.model.js';
 import { getCache, setCache, deleteCache, deleteCachePattern } from '../../shared/utils/cacheHelper.js';
-import { uploadImage, deleteImage } from '../../shared/utils/cloudinary.js';
+
 import { ApiError } from '../../shared/utils/ApiError.js';
 import { ORDER_STATUS } from '../../shared/constants/orderStatuses.js';
 import { ROLES } from '../../shared/constants/roles.js';
@@ -22,7 +22,7 @@ const productListPattern = 'products:*';
 /**
  * Helper to invalidate Redis caches
  */
-const invalidateProductCache = async (outletId = null, productId = null) => {
+const invalidateProductCache = async (productId = null) => {
   if (productId) {
     await deleteCache(productCacheKey(productId));
   }
@@ -75,7 +75,7 @@ export const getAllProducts = async (filters = {}, cursor = null, limit = 20) =>
   ];
 
   if (filters.category) {
-    pipeline.push({ $match: { 'master.category': filters.category } });
+    pipeline.push({ $match: { 'master.category': new mongoose.Types.ObjectId(filters.category) } });
   }
 
   pipeline.push({ $sort: { _id: -1 } });
@@ -188,7 +188,7 @@ export const activateProduct = async (data) => {
   });
 
   // Invalidate caches
-  await invalidateProductCache(product.outletId);
+  await invalidateProductCache();
 
   return product.toJSON();
 };
@@ -213,7 +213,7 @@ export const activateAllProductsForOutlet = async (outletId) => {
   await Product.insertMany(productsToInsert);
 
   // Invalidate caches
-  await invalidateProductCache(outletId);
+  await invalidateProductCache();
 
   return { addedCount: productsToInsert.length };
 };
@@ -259,7 +259,7 @@ export const updateOutletProduct = async (id, data, user) => {
   ).lean();
 
   // Invalidate cache
-  await invalidateProductCache(product.outletId, id);
+  await invalidateProductCache(id);
 
   return updatedProduct;
 };
@@ -281,7 +281,7 @@ export const softDeleteProduct = async (id, user) => {
   const deletedProduct = await Product.findByIdAndDelete(id).lean();
 
   // Invalidate cache
-  await invalidateProductCache(product.outletId, id);
+  await invalidateProductCache(id);
 
   return deletedProduct;
 };
@@ -429,9 +429,10 @@ export const submitReview = async (productId, userId, orderId, data) => {
   });
 
   // Invalidate product caches
-  await invalidateProductCache(product.outletId, productId);
+  await invalidateProductCache(productId);
 
   return review.toJSON();
 };
 
-export { createOffer, validateOffer, getOffers } from './offer.service.js';
+export { createOffer, validateOffer, validateAndUseOffer, getOffers } from './offer.service.js';
+

@@ -2,7 +2,7 @@
 import { Queue, Worker } from 'bullmq';
 import { getRedisClient } from '../../shared/utils/redis.js';
 import { sendEmail } from '../../shared/utils/email.js';
-import Order from '../../shared/models/order.model.js';
+import { Order } from '../orders/order.model.js';
 import User from '../auth/auth.model.js';
 import logger from '../../shared/utils/logger.js';
 

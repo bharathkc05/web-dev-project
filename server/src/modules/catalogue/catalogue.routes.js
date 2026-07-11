@@ -3,7 +3,16 @@ import asyncHandler from '../../shared/middleware/asyncHandler.js';
 import authenticate from '../../shared/middleware/authenticate.js';
 import authorize from '../../shared/middleware/authorize.js';
 import { ROLES } from '../../shared/constants/roles.js';
+import { validateRequest } from '../../shared/middleware/validate.js';
 import * as catalogueController from './catalogue.controller.js';
+import {
+  createCategorySchema,
+  updateCategorySchema,
+  createQuickTabSchema,
+  updateQuickTabSchema,
+  createBannerSchema,
+  updateBannerSchema,
+} from './catalogue.schema.js';
 
 const router = Router();
 const adminOnly = [authenticate, authorize(ROLES.ADMIN)];
@@ -16,20 +25,20 @@ router.get('/banners', asyncHandler(catalogueController.getBanners));
 // Admin CRUD routes
 // Categories
 router.get('/admin/categories', ...adminOnly, asyncHandler(catalogueController.getCategories));
-router.post('/admin/categories', ...adminOnly, asyncHandler(catalogueController.createCategory));
-router.put('/admin/categories/:id', ...adminOnly, asyncHandler(catalogueController.updateCategory));
+router.post('/admin/categories', ...adminOnly, validateRequest(createCategorySchema), asyncHandler(catalogueController.createCategory));
+router.put('/admin/categories/:id', ...adminOnly, validateRequest(updateCategorySchema), asyncHandler(catalogueController.updateCategory));
 router.delete('/admin/categories/:id', ...adminOnly, asyncHandler(catalogueController.deleteCategory));
 
 // QuickTabs
 router.get('/admin/quicktabs', ...adminOnly, asyncHandler(catalogueController.getQuickTabs));
-router.post('/admin/quicktabs', ...adminOnly, asyncHandler(catalogueController.createQuickTab));
-router.put('/admin/quicktabs/:id', ...adminOnly, asyncHandler(catalogueController.updateQuickTab));
+router.post('/admin/quicktabs', ...adminOnly, validateRequest(createQuickTabSchema), asyncHandler(catalogueController.createQuickTab));
+router.put('/admin/quicktabs/:id', ...adminOnly, validateRequest(updateQuickTabSchema), asyncHandler(catalogueController.updateQuickTab));
 router.delete('/admin/quicktabs/:id', ...adminOnly, asyncHandler(catalogueController.deleteQuickTab));
 
 // Banners
 router.get('/admin/banners', ...adminOnly, asyncHandler(catalogueController.getBanners));
-router.post('/admin/banners', ...adminOnly, asyncHandler(catalogueController.createBanner));
-router.put('/admin/banners/:id', ...adminOnly, asyncHandler(catalogueController.updateBanner));
+router.post('/admin/banners', ...adminOnly, validateRequest(createBannerSchema), asyncHandler(catalogueController.createBanner));
+router.put('/admin/banners/:id', ...adminOnly, validateRequest(updateBannerSchema), asyncHandler(catalogueController.updateBanner));
 router.delete('/admin/banners/:id', ...adminOnly, asyncHandler(catalogueController.deleteBanner));
 
 export default router;

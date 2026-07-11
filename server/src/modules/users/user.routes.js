@@ -17,8 +17,8 @@ import {
   suspendUser,
   unsuspendUser,
   assignManager,
-  createOutlet,
 } from './user.controller.js';
+import { createOutlet } from '../outlets/outlet.controller.js';
 import {
   auditLogFilterSchema,
   idParamSchema,

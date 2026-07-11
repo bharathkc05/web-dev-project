@@ -3,6 +3,9 @@ import { z } from 'zod';
 
 const objectIdSchema = z.string().trim().regex(/^[a-fA-F0-9]{24}$/, 'Invalid id');
 
+/** Strip HTML/script tags from free-text fields to prevent stored XSS. */
+const sanitizeString = (str) => (typeof str === 'string' ? str.replace(/<[^>]*>/g, '') : str);
+
 export const addToCartSchema = z.object({
   productId: objectIdSchema,
   qty: z.coerce.number().int().positive('Quantity must be a positive integer'),
@@ -15,16 +18,11 @@ export const placeOrderSchema = z.object({
     state: z.string().trim().min(1, 'State is required'),
     pincode: z.string().trim().regex(/^\d{6}$/, 'Pincode must be exactly 6 digits'),
   }),
-  instructions: z.string().trim().max(300).optional().default(''),
+  instructions: z.string().trim().max(300).transform(sanitizeString).optional().default(''),
   paymentMode: z.enum(['UPI', 'CARD', 'NETBANKING', 'COD'], {
     errorMap: () => ({ message: 'Payment mode must be UPI, CARD, NETBANKING, or COD' }),
   }),
   couponCode: z.string().trim().toUpperCase().optional(),
-  mockItems: z.array(z.object({
-    productId: z.string(),
-    qty: z.number(),
-    outletId: z.string()
-  })).optional(),
 });
 
 export const verifyPaymentSchema = z.object({

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAuthStore } from '../../store/authStore';
-import { userService } from '../../services/user.service';
+import { authService } from '../../features/auth/services/auth.service';
 
 export const CustomerAddressesPage = () => {
   const { user, token, refreshToken } = useAuth();
@@ -19,7 +19,7 @@ export const CustomerAddressesPage = () => {
   const handleAddAddress = async (e) => {
     e.preventDefault();
     try {
-      const updatedAddresses = await userService.addAddress(newAddress);
+      const updatedAddresses = await authService.addAddress(newAddress);
       setAddresses(updatedAddresses);
       setAuth({ ...user, savedAddresses: updatedAddresses }, token, refreshToken);
       setIsAddingAddress(false);
@@ -32,7 +32,7 @@ export const CustomerAddressesPage = () => {
   const handleDelete = async (addressId) => {
     if (!window.confirm('Are you sure you want to delete this address?')) return;
     try {
-      const updatedAddresses = await userService.deleteAddress(addressId);
+      const updatedAddresses = await authService.deleteAddress(addressId);
       setAddresses(updatedAddresses);
       setAuth({ ...user, savedAddresses: updatedAddresses }, token, refreshToken);
     } catch (err) {
@@ -42,7 +42,7 @@ export const CustomerAddressesPage = () => {
 
   const handleSetDefault = async (addressId) => {
     try {
-      const updatedAddresses = await userService.setDefaultAddress(addressId);
+      const updatedAddresses = await authService.setDefaultAddress(addressId);
       setAddresses(updatedAddresses);
       setAuth({ ...user, savedAddresses: updatedAddresses }, token, refreshToken);
     } catch (err) {

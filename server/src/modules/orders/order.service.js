@@ -1,9 +1,9 @@
 // server/src/modules/orders/order.service.js
-import mongoose from 'mongoose';
+
 import { Order, Cart } from './order.model.js';
 import { Product } from '../products/product.model.js';
-import Outlet from '../../shared/models/outlet.model.js';
-import { validateOffer, calculateDiscount } from '../products/offer.service.js';
+
+import { validateAndUseOffer, calculateDiscount } from '../products/offer.service.js';
 import { createRazorpayOrder, verifySignature, initiateRefund } from './payment.service.js';
 import { ApiError } from '../../shared/utils/ApiError.js';
 import { emitToRoom } from '../../shared/utils/socketManager.js';
@@ -11,7 +11,9 @@ import { SOCKET_EVENTS } from '../../shared/events/socketEvents.js';
 import { ORDER_STATUS, VALID_TRANSITIONS } from '../../shared/constants/orderStatuses.js';
 import { PAYMENT_STATUS } from '../../shared/constants/paymentStatuses.js';
 import { ROLES } from '../../shared/constants/roles.js';
+import { TAX_RATE } from '../../shared/constants/taxConfig.js';
 import { pushBullMQJob } from './order.worker.js';
+import logger from '../../shared/utils/logger.js';
 
 /**
  * Add items to cart (upsert item, validate single-outlet)
@@ -103,32 +105,15 @@ export const removeFromCart = async (userId, productId) => {
 };
 
 /**
- * Place a new Order
+ * Place a new Order (always from the user's actual cart — no bypass)
  */
-export const placeOrder = async (userId, address, instructions, paymentMode, couponCode = null, mockItems = null) => {
-  console.log('placeOrder START', { userId, paymentMode });
-  let cart;
-  
-  if (mockItems && mockItems.length > 0) {
-    console.log('Using mockItems bypass');
-    cart = {
-      userId,
-      outletId: mockItems[0].outletId, 
-      items: mockItems
-    };
-    
-    for (let i = 0; i < cart.items.length; i++) {
-      console.log('Fetching product for item', i, cart.items[i].productId);
-      const product = await Product.findById(cart.items[i].productId).populate('masterProductId');
-      cart.items[i].productId = product;
-    }
-  } else {
-    console.log('Fetching cart from DB');
-    cart = await Cart.findOne({ userId }).populate({
-      path: 'items.productId',
-      populate: { path: 'masterProductId' }
-    });
-  }
+export const placeOrder = async (userId, address, instructions, paymentMode, couponCode = null) => {
+  logger.debug('placeOrder START', { userId, paymentMode });
+
+  const cart = await Cart.findOne({ userId }).populate({
+    path: 'items.productId',
+    populate: { path: 'masterProductId' }
+  });
 
   if (!cart || cart.items.length === 0) {
     throw ApiError.badRequest('Your cart is empty');
@@ -155,14 +140,14 @@ export const placeOrder = async (userId, address, instructions, paymentMode, cou
 
   let discount = 0;
   if (couponCode) {
-    const offer = await validateOffer(couponCode, cart.outletId, subtotal);
+    const offer = await validateAndUseOffer(couponCode, cart.outletId, subtotal);
     discount = calculateDiscount(offer, cart.items, subtotal);
   }
 
-  const tax = (subtotal - discount) * 0.05; 
+  const tax = (subtotal - discount) * TAX_RATE; 
   const totalAmount = subtotal - discount + tax;
 
-  console.log('Creating order document in DB');
+  logger.debug('Creating order document in DB');
   const order = await Order.create({
     userId,
     outletId: cart.outletId,
@@ -178,12 +163,11 @@ export const placeOrder = async (userId, address, instructions, paymentMode, cou
   });
 
   if (paymentMode === 'COD') {
-    console.log('Deleting cart');
+    logger.debug('Deleting cart after COD order');
     await Cart.deleteOne({ userId });
 
-    console.log('Pushing to bullmq');
-    pushBullMQJob(order._id, 'ORDER_CONFIRMED').catch(e => console.error('BullMQ Error:', e));
-    console.log('Emitting socket');
+    logger.debug('Pushing to BullMQ');
+    pushBullMQJob(order._id, 'ORDER_CONFIRMED').catch(e => logger.error('BullMQ push error:', { message: e.message }));
     emitToRoom(String(order.outletId), SOCKET_EVENTS.ORDER_CREATED, order.toJSON());
   } else {
     const rzpOrderId = await createRazorpayOrder(order.totalAmount, order._id);
@@ -191,12 +175,12 @@ export const placeOrder = async (userId, address, instructions, paymentMode, cou
     await order.save();
   }
 
-  console.log('placeOrder END');
+  logger.debug('placeOrder END');
   return order.toJSON();
 };
 
 /**
- * Verify Razorpay payment signature
+ * Verify Razorpay payment signature (with user ownership check)
  */
 export const verifyPayment = async (orderId, userId, razorpayData) => {
   const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = razorpayData;
@@ -204,6 +188,11 @@ export const verifyPayment = async (orderId, userId, razorpayData) => {
   const order = await Order.findById(orderId);
   if (!order) {
     throw ApiError.notFound('Order not found');
+  }
+
+  // Ownership check: only the user who placed the order can verify payment
+  if (String(order.userId) !== String(userId)) {
+    throw ApiError.forbidden('You do not have permission to verify this order');
   }
 
   if (order.paymentStatus !== PAYMENT_STATUS.PENDING) {
@@ -296,7 +285,7 @@ export const getOrders = async (user, filters = {}, page = 1, limit = 20) => {
     query.outletId = filters.outletId;
   }
   
-  console.log('getOrders query:', query, 'user role:', user.role);
+  logger.debug('getOrders query', { query, role: user.role });
 
   if (filters.orderStatus) {
     query.orderStatus = filters.orderStatus;

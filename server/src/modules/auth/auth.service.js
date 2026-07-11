@@ -73,6 +73,22 @@ const serializeUser = (user) => {
   return JSON.parse(JSON.stringify(user));
 };
 
+/**
+ * Returns a minimal user object for auth responses to avoid PII leakage.
+ * Full profile data should only come from GET /auth/me.
+ */
+const slimSerializeUser = (user) => {
+  const obj = typeof user?.toJSON === 'function' ? user.toJSON() : user;
+  return {
+    _id: obj._id,
+    id: obj._id,
+    name: obj.name,
+    email: obj.email,
+    role: obj.role,
+    outletId: obj.outletId || null,
+  };
+};
+
 export const createUser = async (data) => {
   const email = normalizeEmail(data.email);
   const existingUser = await User.findOne({ email });
@@ -88,7 +104,7 @@ export const createUser = async (data) => {
   await storeRefreshToken(user._id, refreshToken);
 
   return {
-    user: serializeUser(user),
+    user: slimSerializeUser(user),
     accessToken,
     refreshToken,
   };
@@ -97,10 +113,20 @@ export const createUser = async (data) => {
 export const loginUser = async (emailInput, password, ip = 'unknown') => {
   const email = normalizeEmail(emailInput);
   const redis = await getRedisClient();
+
+  // Check brute-force attempts BEFORE querying the database
+  const failKey = loginFailKey(ip, email);
+  const currentAttempts = await redis.get(failKey);
+  if (currentAttempts && Number(currentAttempts) >= MAX_LOGIN_ATTEMPTS) {
+    throw ApiError.tooManyRequests('Too many failed login attempts. Please try again later.');
+  }
+
   const user = await User.findOne({ email }).select('+passwordHash');
   const isValidPassword = user ? await bcrypt.compare(password, user.passwordHash) : false;
 
   if (!user || !isValidPassword) {
+    // Record the failed attempt
+    await recordLoginFailure(redis, email, ip);
     throw ApiError.unauthorized(USER_ERRORS.INVALID_CREDENTIALS);
   }
 
@@ -108,13 +134,14 @@ export const loginUser = async (emailInput, password, ip = 'unknown') => {
     throw ApiError.unauthorized(USER_ERRORS.ACCOUNT_SUSPENDED);
   }
 
+  // Successful login — clear failure counter
   await clearLoginFailures(redis, email, ip);
 
   const { accessToken, refreshToken } = createTokenPair(user);
   await storeRefreshToken(user._id, refreshToken);
 
   return {
-    user: serializeUser(user),
+    user: slimSerializeUser(user),
     accessToken,
     refreshToken,
   };

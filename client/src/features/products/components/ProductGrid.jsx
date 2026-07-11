@@ -1,6 +1,6 @@
 import { ProductCard } from './ProductCard';
 
-export const ProductGrid = ({ products, onAddClick, renderCustomAction, renderStatusBadge, fullWidth = false }) => {
+export const ProductGrid = ({ products, onAddClick, renderCustomAction, renderStatusBadge }) => {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fit,270px)] justify-center sm:justify-evenly gap-y-6 gap-x-2 md:gap-x-4 lg:gap-x-6 items-stretch">
       {products.map((product) => (

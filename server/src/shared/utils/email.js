@@ -14,6 +14,19 @@ const transporter = nodemailer.createTransport({
 });
 
 /**
+ * Mask an email address for safe logging (e.g. b***h@gmail.com)
+ * Prevents PII from appearing in centralized log stores.
+ */
+const maskEmail = (email) => {
+  const [local, domain] = email.split('@');
+  if (!domain) return '***';
+  const masked = local.length <= 2
+    ? '*'.repeat(local.length)
+    : `${local[0]}${'*'.repeat(local.length - 2)}${local[local.length - 1]}`;
+  return `${masked}@${domain}`;
+};
+
+/**
  * Send HTML emails via Gmail SMTP transporter.
  * @param {Object} options - { to, subject, html }
  */
@@ -23,7 +36,7 @@ export const sendEmail = async ({ to, subject, html }) => {
 
   if (!emailUser || !emailPass) {
     logger.warn('SMTP Credentials (EMAIL_USER/EMAIL_PASS) missing. Mocking email delivery:', {
-      to,
+      to: maskEmail(to),
       subject,
     });
     return { messageId: 'mock-message-id' };
@@ -37,10 +50,10 @@ export const sendEmail = async ({ to, subject, html }) => {
       html,
     });
 
-    logger.info(`Email sent successfully to ${to}, messageId=${info.messageId}`);
+    logger.info(`Email sent successfully to ${maskEmail(to)}, messageId=${info.messageId}`);
     return info;
   } catch (error) {
-    logger.error('Email delivery failed', { to, subject, message: error.message });
+    logger.error('Email delivery failed', { to: maskEmail(to), subject, message: error.message });
     throw error;
   }
 };

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, Mail, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Mail } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useUIStore } from '../../store/uiStore';
 import { AuthVisualPanel } from '../../features/auth/components/AuthVisualPanel';

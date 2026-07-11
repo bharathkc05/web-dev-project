@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { Header } from '../../components/layout/Header';
 import { AuthModal } from '../../features/auth/components/AuthModal';
-import { AdminSidebar } from '../../components/layout/AdminSidebar';
+import { AdminSidebar } from './components/AdminSidebar';
 
 export const AdminLayout = () => {
   return (

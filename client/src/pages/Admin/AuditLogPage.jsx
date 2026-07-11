@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminService } from '../../services/admin.service';
+import { adminService } from './services/admin.service';
 
 export const AuditLogPage = () => {
   const [logs, setLogs] = useState([]);

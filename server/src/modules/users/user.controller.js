@@ -1,5 +1,4 @@
-import Outlet from '../../shared/models/outlet.model.js';
-import { ApiResponse } from '../../shared/utils/ApiResponse.js';
+
 import {
   approveOutlet as approveOutletService,
   deleteUser as deleteUserService,
@@ -41,29 +40,6 @@ export const deleteUser = async (req, res) => {
 export const getOutlets = async (req, res) => {
   const result = await getOutletsService(req.query);
   res.status(200).json({ success: true, data: result });
-};
-
-export const createOutlet = async (req, res, next) => {
-  try {
-    const { name, address, storeTiming, availableServices, latitude, longitude } = req.body;
-
-    const newOutlet = await Outlet.create({
-      name,
-      address,
-      storeTiming,
-      availableServices,
-      location: {
-        type: 'Point',
-        coordinates: [longitude, latitude]
-      },
-      isApproved: true,
-      isActive: true
-    });
-
-    res.status(201).json(ApiResponse.created(newOutlet, 'Outlet created successfully'));
-  } catch (error) {
-    next(error);
-  }
 };
 
 export const approveOutlet = async (req, res) => {

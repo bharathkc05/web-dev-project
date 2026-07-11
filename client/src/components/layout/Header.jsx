@@ -1,18 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useCart } from '../../features/cart/hooks/useCart';
 import { useUIStore } from '../../store/uiStore';
 import { useOutletStore } from '../../store/outletStore';
-import { outletService } from '../../services/outlet.service';
+import { outletService } from '../../features/outlets/services/outlet.service';
 import logo from '../../assets/logo.png';
 
 export const Header = () => {
-  const { isAuthenticated, user, logout } = useAuth();
-  const { items, totalCount, clearCart } = useCart();
+  const { isAuthenticated, user } = useAuth();
+  const { totalCount, clearCart } = useCart();
   const { openAuthModal, orderMode, toggleOrderMode } = useUIStore();
   const { selectedOutlet, setSelectedOutlet } = useOutletStore();
-  const navigate = useNavigate();
+
   
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
@@ -62,11 +62,7 @@ export const Header = () => {
     };
   }, [isProfileOpen, isOutletOpen]);
 
-  const handleLogout = () => {
-    setIsProfileOpen(false);
-    logout();
-    navigate('/');
-  };
+
 
   const handleOutletSelect = (outlet) => {
     if (selectedOutlet?._id !== outlet._id) {
@@ -116,7 +112,7 @@ export const Header = () => {
           <div className="flex items-center space-x-6">
             {/* Logo */}
             <Link className="flex-shrink-0 relative z-50 bg-white rounded-full flex items-center justify-center w-20 h-20 -mb-4 translate-y-2" to="/">
-              <img src={logo} alt="Velvet Bites Logo" className="w-14 h-14 object-contain" />
+              <img src={logo} alt="Velvet Bites Logo" className="w-[68px] h-[68px] object-contain" />
             </Link>
             {/* Delivery / Dine-in Toggle */}
             {isCustomer && (

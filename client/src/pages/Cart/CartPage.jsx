@@ -4,11 +4,11 @@ import { useCart } from '../../features/cart/hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
 import { useUIStore } from '../../store/uiStore';
 import { useOutletStore } from '../../store/outletStore';
-import { userService } from '../../services/user.service';
+import { authService } from '../../features/auth/services/auth.service';
 import { useAuthStore } from '../../store/authStore';
 
 const CartPage = () => {
-  const { items, updateQuantity, removeItem, clearCart, subtotal, totalCount } = useCart();
+  const { items, updateQuantity, clearCart, subtotal } = useCart();
   const { isAuthenticated, user, token, refreshToken } = useAuth();
   const { setAuth } = useAuthStore();
   const { openAuthModal, orderMode } = useUIStore();
@@ -33,7 +33,7 @@ const CartPage = () => {
   const handleAddAddress = async (e) => {
     e.preventDefault();
     try {
-      const updatedAddresses = await userService.addAddress(newAddress);
+      const updatedAddresses = await authService.addAddress(newAddress);
       setAddresses(updatedAddresses);
       setAuth({ ...user, savedAddresses: updatedAddresses }, token, refreshToken);
       setIsAddingAddress(false);
@@ -317,9 +317,7 @@ const CartPage = () => {
                           <p className="text-[12px] text-on-surface-variant font-semibold mb-2 line-clamp-2">
                             {item.description || 'Medium Fry + Large Coca-Cola + ' + item.name}
                           </p>
-                          <button className="text-[12px] font-extrabold text-[#703b29] text-left">
-                            Customise
-                          </button>
+
                         </div>
                         
                         <div className="flex flex-col items-end gap-3 shrink-0">

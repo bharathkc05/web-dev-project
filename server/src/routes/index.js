@@ -9,18 +9,6 @@ import outletRouter from '../modules/outlets/outlet.routes.js';
 import catalogueRouter from '../modules/catalogue/catalogue.routes.js';
 
 const router = Router();
-
-/**
- * GET /api/health
- * Returns service availability health checks
- */
-router.get('/health', (req, res) => {
-  res.status(200).json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-  });
-});
-
 // Mount module routers
 router.use('/auth', authRouter);
 router.use('/outlets', outletRouter);

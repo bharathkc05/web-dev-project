@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { productService } from '../../features/products/services/product.service';
-import { formatPrice } from '../../utils/formatPrice';
+
 import { api } from '../../utils/api';
 import { useAuth } from '../../hooks/useAuth';
 import { ActivateProductModal } from '../../features/products/components/ActivateProductModal';
@@ -135,7 +135,7 @@ export const ManagerInventory = () => {
     try {
       setIsLoading(true);
       if (activeTab === 'menu') {
-        const data = await productService.getProducts({ outletId: user?.outletId, limit: 500 });
+        const data = await productService.getProducts({ outletId: user?.outletId, limit: 100 });
         setMyProducts(data.data?.items || data.items || []);
       } else {
         const data = await productService.getAvailableMasterProducts();

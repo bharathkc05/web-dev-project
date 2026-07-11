@@ -1,6 +1,9 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+/** Must match server-side TAX_RATE in shared/constants/taxConfig.js */
+const TAX_RATE = 0.05;
+
 export const useCartStore = create(
   persist(
     (set, get) => ({
@@ -77,7 +80,7 @@ export const useCartStore = create(
 
       getTotals: () => {
         const subtotal = get().getSubtotal();
-        const tax = subtotal * 0.05; // 5% tax
+        const tax = subtotal * TAX_RATE; // Matches server-side TAX_RATE
         
         // Calculate discount based on offer
         let discount = 0;

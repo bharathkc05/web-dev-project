@@ -56,7 +56,7 @@ export const MenuPage = () => {
       try {
         setLoading(true);
         // We fetch up to 500 products for simplicity, or could implement infinite scroll later
-        const res = await productService.getProducts({ outletId: selectedOutlet._id, isAvailable: true, limit: 500 });
+        const res = await productService.getProducts({ outletId: selectedOutlet._id, isAvailable: true, limit: 100 });
         // The API returns { success: true, data: { items: [...], pageInfo: {...} } }
         setProducts(res.data?.items || res.items || []);
       } catch (error) {
@@ -73,11 +73,11 @@ export const MenuPage = () => {
   const activeQuickTabName = activeQuickTab?.name || '';
   
   const filteredProducts = useMemo(() => {
+    if (!activeQuickTabId) return products;
     return products.filter(product => {
-      if (activeQuickTabId) {
-        return product.quickTab === activeQuickTabId || product.quickTab?._id === activeQuickTabId;
-      }
-      return false;
+      // quickTab from the server aggregate is an ObjectId — compare as string
+      const qtId = product.quickTab ? String(product.quickTab) : null;
+      return qtId === activeQuickTabId;
     });
   }, [products, activeQuickTabId]);
 

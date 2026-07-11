@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { MenuPage } from '../pages/Menu/MenuPage';
 import { ProtectedRoute } from './ProtectedRoute';

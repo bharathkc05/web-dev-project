@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { useAuthStore } from '../../store/authStore';
-import { userService } from '../../services/user.service';
+import { authService } from '../../features/auth/services/auth.service';
 
 export const CustomerProfilePage = () => {
   const { user, token, refreshToken } = useAuth();
@@ -22,7 +22,7 @@ export const CustomerProfilePage = () => {
     setSuccessMsg('');
     setIsLoading(true);
     try {
-      const updatedProfile = await userService.updateProfile(formData);
+      const updatedProfile = await authService.updateProfile(formData);
       setAuth({ ...user, ...updatedProfile }, token, refreshToken);
       setSuccessMsg('Profile updated successfully!');
       setIsEditing(false);

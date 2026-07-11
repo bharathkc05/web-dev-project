@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { adminService } from '../../services/admin.service';
+import { adminService } from './services/admin.service';
 import { formatPrice } from '../../utils/formatPrice';
 
 export const AdminDashboard = () => {

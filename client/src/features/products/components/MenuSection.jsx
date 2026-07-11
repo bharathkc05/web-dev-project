@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CategoryCard } from '../../../components/ui/CategoryCard';
+import { CategoryCard } from './CategoryCard';
 import { SectionHeading } from '../../../components/ui/SectionHeading';
 import { api } from '../../../utils/api';
 

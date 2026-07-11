@@ -10,15 +10,23 @@ const booleanQuerySchema = z.preprocess((value) => {
   return value;
 }, z.boolean());
 
+/**
+ * Strip HTML/script tags from a string to prevent stored XSS.
+ * Fix #21: Applied to all free-text user input fields.
+ */
+const sanitizeString = (str) => (typeof str === 'string' ? str.replace(/<[^>]*>/g, '') : str);
+
+const sanitizedString = (schema) =>
+  schema.transform((val) => sanitizeString(val));
+
 export const createMasterProductSchema = z.object({
-  name: z.string().trim().min(1, 'Product name is required').max(100),
-  description: z.string().trim().max(500).optional(),
-  category: z.enum(['BURGERS', 'WRAPS', 'SNACKS', 'BEVERAGES', 'DESSERTS', 'BK CAFE', 'MEALS'], {
-    errorMap: () => ({ message: 'Invalid category' }),
-  }),
-  quickTab: z.enum(['PERI PERI FEST', 'CRAZY DEALS', 'STARTING @ 59', 'MIX N MATCH COMBOS', 'WHOPPER DELUXE', 'ORIGINAL WHOPPER', 'SUPER SAVER MEALS', 'BURGERS & WRAPS', 'SNACKS', 'BEVERAGES', 'DESSERTS', 'BK CAFE']).optional(),
+  name: sanitizedString(z.string().trim().min(1, 'Product name is required').max(100)),
+  description: sanitizedString(z.string().trim().max(500)).optional(),
+  // Fix #20: category and quickTab are ObjectId refs to Category/QuickTab collections
+  category: objectIdSchema,
+  quickTab: objectIdSchema.optional(),
   isVeg: booleanQuerySchema.optional().default(false),
-  ingredients: z.array(z.string()).optional().default([]),
+  ingredients: z.array(sanitizedString(z.string().trim())).optional().default([]),
   basePrice: z.coerce.number().nonnegative('Base price must be a non-negative number'),
   originalPrice: z.coerce.number().nonnegative('Original price must be a non-negative number').optional(),
 });
@@ -54,16 +62,20 @@ export const offerSchema = z.object({
 });
 
 export const reviewSchema = z.object({
+  orderId: objectIdSchema,
   rating: z.coerce.number().int().min(1).max(5, 'Rating must be between 1 and 5'),
-  comment: z.string().trim().max(500, 'Comment must not exceed 500 characters').optional(),
+  // Fix #21: sanitize free-text review comments against stored XSS
+  comment: sanitizedString(z.string().trim().max(500, 'Comment must not exceed 500 characters')).optional(),
 });
 
 export const productFilterSchema = z.object({
   outletId: objectIdSchema.optional(),
-  category: z.enum(['BURGER', 'SIDE', 'BEVERAGE', 'DESSERT', 'PERI PERI FEST']).optional(),
+  // Fix #20: category filter now accepts an ObjectId (matching the MasterProduct model)
+  category: objectIdSchema.optional(),
   isAvailable: booleanQuerySchema.optional(),
   cursor: objectIdSchema.optional(),
-  limit: z.coerce.number().int().min(1).max(500).default(20),
+  // Fix #25: cap limit at 100 to prevent heavy aggregation queries
+  limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 export const idParamSchema = z.object({

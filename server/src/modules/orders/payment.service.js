@@ -1,7 +1,9 @@
 // server/src/modules/orders/payment.service.js
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
+import config from '../../config/env.js';
 import logger from '../../shared/utils/logger.js';
+import { ApiError } from '../../shared/utils/ApiError.js';
 
 let razorpayInstance = null;
 
@@ -71,7 +73,10 @@ export const verifySignature = (razorpayOrderId, paymentId, signature) => {
   const instance = getRazorpayInstance();
 
   if (!instance) {
-    logger.info('Skipping Razorpay signature verification (mock mode)');
+    if (config.NODE_ENV === 'production') {
+      throw ApiError.internal('Payment gateway is not configured. Cannot verify payment.');
+    }
+    logger.info('Skipping Razorpay signature verification (mock mode — development only)');
     return true;
   }
 

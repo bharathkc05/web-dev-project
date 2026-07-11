@@ -1,8 +1,10 @@
 // server/src/modules/auth/auth.routes.js
 import { Router } from 'express';
 
-import authenticate from '../../shared/middleware/authenticate.js';
+import authenticate, { authenticateAllowExpired } from '../../shared/middleware/authenticate.js';
+import asyncHandler from '../../shared/middleware/asyncHandler.js';
 import { authLimiter } from '../../shared/middleware/rateLimiter.js';
+import { validateRequest } from '../../shared/middleware/validate.js';
 import {
   login,
   password,
@@ -16,26 +18,31 @@ import {
   signup,
   signout,
 } from './auth.controller.js';
+import {
+  signupSchema,
+  loginSchema,
+  updateProfileSchema,
+} from './auth.schema.js';
 
 const router = Router();
 
 // Authentication endpoints
-router.post('/signup', signup);
-router.post('/login', authLimiter, login);
-router.post('/refresh', refresh);
-router.post('/logout', signout);
+router.post('/signup', authLimiter, validateRequest(signupSchema), asyncHandler(signup));
+router.post('/login', authLimiter, validateRequest(loginSchema), asyncHandler(login));
+router.post('/refresh', authLimiter, authenticateAllowExpired, asyncHandler(refresh));
+router.post('/logout', authenticate, asyncHandler(signout));
 
 // Profile and details endpoints
-router.get('/me', authenticate, profile);
-router.put('/profile', authenticate, editProfile);
-router.put('/password', authenticate, password);
+router.get('/me', authenticate, asyncHandler(profile));
+router.put('/profile', authenticate, validateRequest(updateProfileSchema), asyncHandler(editProfile));
+router.put('/password', authenticate, asyncHandler(password));
 
 // Saved Addresses endpoints
-router.post('/profile/addresses', authenticate, addSavedAddress);
-router.delete('/profile/addresses/:addressId', authenticate, deleteSavedAddress);
-router.patch('/profile/addresses/:addressId/default', authenticate, setDefaultSavedAddress);
+router.post('/profile/addresses', authenticate, asyncHandler(addSavedAddress));
+router.delete('/profile/addresses/:addressId', authenticate, asyncHandler(deleteSavedAddress));
+router.patch('/profile/addresses/:addressId/default', authenticate, asyncHandler(setDefaultSavedAddress));
 
 // Favourites endpoints
-router.post('/profile/favourites/toggle', authenticate, toggleFavourite);
+router.post('/profile/favourites/toggle', authenticate, asyncHandler(toggleFavourite));
 
 export default router;

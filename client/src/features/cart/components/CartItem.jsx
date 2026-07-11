@@ -25,13 +25,7 @@ export const CartItem = ({ item, onQuantityChange, onRemove }) => {
         </div>
       </div>
 
-      <div className="flex justify-between items-center mt-2">
-        <button 
-          onClick={onRemove}
-          className="font-label-sm text-[12px] text-tertiary underline hover:text-primary transition-colors font-bold"
-        >
-          Customise
-        </button>
+      <div className="flex justify-end items-center mt-2">
         <span className="font-body-md text-sm font-extrabold text-on-surface">
           ₹ {(price * quantity).toFixed(2)}/-
         </span>

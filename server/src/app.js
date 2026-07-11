@@ -27,9 +27,9 @@ app.use(
 // Compress responses
 app.use(compression());
 
-// Parse request body JSON
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Parse request body JSON (with explicit size limit)
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
 // Parse cookies
 app.use(cookieParser());
