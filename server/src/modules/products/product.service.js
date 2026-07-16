@@ -40,10 +40,11 @@ const invalidateProductCache = async (productId = null) => {
 export const getAllProducts = async (filters = {}, cursor = null, limit = 20) => {
   const outletId = filters.outletId || 'all';
   const category = filters.category || 'all';
+  const quickTab = filters.quickTab || 'all';
   const isAvailable = filters.isAvailable !== false ? 'avail' : 'all';
   const cursorStr = cursor || 'start';
   
-  const cacheKey = `products:${outletId}:${category}:${isAvailable}:${cursorStr}:${limit}`;
+  const cacheKey = `products:${outletId}:${category}:${quickTab}:${isAvailable}:${cursorStr}:${limit}`;
   
   const cachedData = await getCache(cacheKey);
   if (cachedData) {
@@ -76,6 +77,9 @@ export const getAllProducts = async (filters = {}, cursor = null, limit = 20) =>
 
   if (filters.category) {
     pipeline.push({ $match: { 'master.category': new mongoose.Types.ObjectId(filters.category) } });
+  }
+  if (filters.quickTab) {
+    pipeline.push({ $match: { 'master.quickTab': new mongoose.Types.ObjectId(filters.quickTab) } });
   }
 
   pipeline.push({ $sort: { _id: -1 } });

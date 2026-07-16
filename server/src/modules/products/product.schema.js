@@ -72,6 +72,7 @@ export const productFilterSchema = z.object({
   outletId: objectIdSchema.optional(),
   // Fix #20: category filter now accepts an ObjectId (matching the MasterProduct model)
   category: objectIdSchema.optional(),
+  quickTab: objectIdSchema.optional(),
   isAvailable: booleanQuerySchema.optional(),
   cursor: objectIdSchema.optional(),
   // Fix #25: cap limit at 100 to prevent heavy aggregation queries

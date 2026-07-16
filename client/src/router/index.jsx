@@ -5,6 +5,7 @@ import { ProtectedRoute } from './ProtectedRoute';
 
 import { HomePage } from '../pages/Home/HomePage';
 import CartPage from '../pages/Cart/CartPage';
+import { ResetPasswordPage } from '../pages/Auth/ResetPasswordPage';
 
 import { CustomerOrdersPage } from '../pages/Customer/CustomerOrdersPage';
 import { CustomerOrderTrackPage } from '../pages/Customer/CustomerOrderTrackPage';
@@ -48,6 +49,10 @@ export const router = createBrowserRouter([
       {
         path: 'cart',
         element: <CartPage />,
+      },
+      {
+        path: 'reset-password/:token',
+        element: <ResetPasswordPage />,
       },
       {
         path: 'checkout',

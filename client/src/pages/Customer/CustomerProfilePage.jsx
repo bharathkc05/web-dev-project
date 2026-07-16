@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { useAuthStore } from '../../store/authStore';
 import { authService } from '../../features/auth/services/auth.service';
@@ -6,6 +7,8 @@ import { authService } from '../../features/auth/services/auth.service';
 export const CustomerProfilePage = () => {
   const { user, token, refreshToken } = useAuth();
   const { setAuth } = useAuthStore();
+  const location = useLocation();
+  const navigate = useNavigate();
   
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -15,6 +18,14 @@ export const CustomerProfilePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  useEffect(() => {
+    if (location.state?.edit) {
+      setIsEditing(true);
+      // Clean up the state so it doesn't re-open on page refresh
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -37,14 +48,6 @@ export const CustomerProfilePage = () => {
     <div className="flex flex-col">
       <div className="flex justify-between items-center mb-8">
         <h2 className="font-display text-2xl font-black text-black uppercase tracking-wider">PROFILE</h2>
-        {!isEditing && (
-          <button 
-            onClick={() => setIsEditing(true)}
-            className="bg-white border border-neutral-200 hover:bg-neutral-50 text-black px-6 py-2 rounded-lg font-bold uppercase tracking-wide text-xs transition-colors shadow-sm"
-          >
-            Edit Profile
-          </button>
-        )}
       </div>
 
       <div className="bg-white rounded-xl p-6 shadow-sm">

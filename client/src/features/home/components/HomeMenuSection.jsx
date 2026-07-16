@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CategoryCard } from './CategoryCard';
+import { CategoryCard } from '../../products/components/CategoryCard';
 import { SectionHeading } from '../../../components/ui/SectionHeading';
 import { api } from '../../../utils/api';
 
-export const MenuSection = () => {
+export const HomeMenuSection = () => {
   const [quickTabs, setQuickTabs] = useState([]);
   const navigate = useNavigate();
 
@@ -23,7 +23,7 @@ export const MenuSection = () => {
   }, []);
   return (
     <section className="max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-12 py-12">
-      <SectionHeading title="Our Menu" showSeeAll={true} onSeeAllClick={() => {}} />
+      <SectionHeading title="Our Menu" showSeeAll={true} onSeeAllClick={() => navigate('/menu')} />
       
         
         {/* Menu Categories Carousel */}

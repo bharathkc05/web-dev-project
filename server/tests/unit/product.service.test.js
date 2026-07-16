@@ -45,8 +45,8 @@ jest.unstable_mockModule('../../src/modules/products/product.model.js', () => ({
   },
 }));
 
-jest.unstable_mockModule('../../src/shared/models/order.model.js', () => ({
-  default: {
+jest.unstable_mockModule('../../src/modules/orders/order.model.js', () => ({
+  Order: {
     findOne: mockFindOneOrder,
   },
 }));

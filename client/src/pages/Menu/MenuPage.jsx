@@ -55,9 +55,17 @@ export const MenuPage = () => {
       
       try {
         setLoading(true);
-        // We fetch up to 500 products for simplicity, or could implement infinite scroll later
-        const res = await productService.getProducts({ outletId: selectedOutlet._id, isAvailable: true, limit: 100 });
-        // The API returns { success: true, data: { items: [...], pageInfo: {...} } }
+        // Fetch products specifically for this quick tab from the backend
+        const params = { 
+          outletId: selectedOutlet._id, 
+          isAvailable: true, 
+          limit: 100 
+        };
+        if (activeQuickTabId) {
+          params.quickTab = activeQuickTabId;
+        }
+        
+        const res = await productService.getProducts(params);
         setProducts(res.data?.items || res.items || []);
       } catch (error) {
         console.error('Failed to fetch outlet products:', error);
@@ -67,19 +75,12 @@ export const MenuPage = () => {
     };
     
     fetchProducts();
-  }, [selectedOutlet]);
+  }, [selectedOutlet, activeQuickTabId]);
 
   const activeQuickTab = quickTabs.find(tab => tab._id === activeQuickTabId);
   const activeQuickTabName = activeQuickTab?.name || '';
   
-  const filteredProducts = useMemo(() => {
-    if (!activeQuickTabId) return products;
-    return products.filter(product => {
-      // quickTab from the server aggregate is an ObjectId — compare as string
-      const qtId = product.quickTab ? String(product.quickTab) : null;
-      return qtId === activeQuickTabId;
-    });
-  }, [products, activeQuickTabId]);
+  const filteredProducts = products;
 
   return (
     <div className="pt-10 pb-10 w-full max-w-[1400px] mx-auto px-4 md:px-8">

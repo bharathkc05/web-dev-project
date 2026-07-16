@@ -125,12 +125,13 @@ export const LoginPage = () => {
                   Remember me
                 </label>
               </div>
-              <a
-                href="#"
+              <button
+                type="button"
+                onClick={() => setAuthModalView('forgot-password')}
                 className="text-sm text-[#BAA38C] hover:text-[#A68F77] hover:underline font-bold transition-colors"
               >
                 Forgot password?
-              </a>
+              </button>
             </div>
 
             {error && (

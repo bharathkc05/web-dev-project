@@ -15,7 +15,7 @@ export const signupSchema = z.object({
   name: nameSchema,
   email: emailSchema,
   password: passwordSchema,
-  phone: phoneSchema,
+  phone: phoneSchema.optional(),
 });
 
 export const loginSchema = z.object({
@@ -24,3 +24,11 @@ export const loginSchema = z.object({
 });
 
 export const updateProfileSchema = signupSchema.pick({ name: true, email: true, password: true, phone: true }).partial();
+
+export const forgotPasswordSchema = z.object({
+  email: emailSchema,
+});
+
+export const resetPasswordSchema = z.object({
+  password: passwordSchema,
+});

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { MasterProductFormModal } from '../../features/products/components/MasterProductFormModal';
 import { productService } from '../../features/products/services/product.service';
 
-import { adminService } from './services/admin.service';
+import { adminService } from '../../features/admin/services/admin.service';
 import { ProductGrid } from '../../features/products/components/ProductGrid';
 import { useLocation } from 'react-router-dom';
 

@@ -17,11 +17,15 @@ import {
   refresh,
   signup,
   signout,
+  forgotPassword,
+  resetPassword,
 } from './auth.controller.js';
 import {
   signupSchema,
   loginSchema,
   updateProfileSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
 } from './auth.schema.js';
 
 const router = Router();
@@ -31,6 +35,8 @@ router.post('/signup', authLimiter, validateRequest(signupSchema), asyncHandler(
 router.post('/login', authLimiter, validateRequest(loginSchema), asyncHandler(login));
 router.post('/refresh', authLimiter, authenticateAllowExpired, asyncHandler(refresh));
 router.post('/logout', authenticate, asyncHandler(signout));
+router.post('/forgot-password', authLimiter, validateRequest(forgotPasswordSchema), asyncHandler(forgotPassword));
+router.post('/reset-password/:token', authLimiter, validateRequest(resetPasswordSchema), asyncHandler(resetPassword));
 
 // Profile and details endpoints
 router.get('/me', authenticate, asyncHandler(profile));

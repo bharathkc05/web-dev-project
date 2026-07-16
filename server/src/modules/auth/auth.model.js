@@ -1,5 +1,6 @@
 // server/src/modules/auth/auth.model.js
 import mongoose from 'mongoose';
+import crypto from 'crypto';
 import { ROLES, ROLE_PERMISSIONS } from '../../shared/constants/roles.js';
 
 const userSchema = new mongoose.Schema(
@@ -58,12 +59,27 @@ const userSchema = new mongoose.Schema(
     },
     refreshTokenHash: { type: String, select: false },
     refreshTokenExpiresAt: { type: Date, select: false },
+    passwordResetToken: { type: String, select: false },
+    passwordResetExpires: { type: Date, select: false },
   },
   { timestamps: true }
 );
 
 userSchema.index({ role: 1, isActive: 1 });
 userSchema.index({ isDeleted: 1, deletedAt: 1 });
+
+userSchema.methods.createPasswordResetToken = function () {
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  
+  this.passwordResetToken = crypto
+    .createHash('sha256')
+    .update(resetToken)
+    .digest('hex');
+    
+  this.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  
+  return resetToken;
+};
 
 
 userSchema.virtual('permissions').get(function () {

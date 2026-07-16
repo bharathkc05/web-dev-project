@@ -80,19 +80,23 @@ const createRedisMock = () => ({
 const createTestUser = (overrides = {}) => {
   const user = {
     _id: 'user-1',
+    name: 'Test User',
     email: 'user@example.com',
     role: 'CUSTOMER',
     passwordHash: 'hashed-password',
     isActive: true,
+    outletId: null,
     savedAddresses: [],
     favouriteProductIds: [],
     save: jest.fn().mockResolvedValue(true),
     toJSON() {
       return {
         _id: this._id,
+        name: this.name,
         email: this.email,
         role: this.role,
         isActive: this.isActive,
+        outletId: this.outletId,
         savedAddresses: this.savedAddresses,
         favouriteProductIds: this.favouriteProductIds,
       };
@@ -123,7 +127,7 @@ describe('auth.service unit tests', () => {
       mockFindOne.mockResolvedValue(null); // Email not registered
       mockHash.mockResolvedValue('hashed-password-new');
       
-      const newUser = createTestUser({ passwordHash: 'hashed-password-new' });
+      const newUser = createTestUser({ passwordHash: 'hashed-password-new', name: 'New User' });
       mockCreate.mockResolvedValue(newUser);
 
       mockSign
@@ -150,11 +154,11 @@ describe('auth.service unit tests', () => {
       expect(result).toEqual({
         user: {
           _id: 'user-1',
+          id: 'user-1',
+          name: 'New User',
           email: 'user@example.com',
           role: 'CUSTOMER',
-          isActive: true,
-          savedAddresses: [],
-          favouriteProductIds: [],
+          outletId: null,
         },
         accessToken: 'access-token',
         refreshToken: 'refresh-token',
@@ -213,11 +217,11 @@ describe('auth.service unit tests', () => {
       expect(result).toEqual({
         user: {
           _id: 'user-1',
+          id: 'user-1',
+          name: 'Test User',
           email: 'user@example.com',
           role: 'CUSTOMER',
-          isActive: true,
-          savedAddresses: [],
-          favouriteProductIds: [],
+          outletId: null,
         },
         accessToken: 'access-token',
         refreshToken: 'refresh-token',
@@ -271,7 +275,7 @@ describe('auth.service unit tests', () => {
 
       await expect(loginUser('user@example.com', 'plain-password', '127.0.0.1')).rejects.toMatchObject({
         statusCode: 429,
-        message: 'Too many login attempts. Try again later.',
+        message: 'Too many failed login attempts. Please try again later.',
       });
 
       expect(mockFindOne).not.toHaveBeenCalled();
@@ -425,9 +429,11 @@ describe('auth.service unit tests', () => {
     test('returns cached profile from Redis on cache hit', async () => {
       const cachedProfile = {
         _id: 'user-1',
+        name: 'Test User',
         email: 'user@example.com',
         role: 'CUSTOMER',
         isActive: true,
+        outletId: null,
         savedAddresses: [],
         favouriteProductIds: [],
       };

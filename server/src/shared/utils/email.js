@@ -35,9 +35,14 @@ export const sendEmail = async ({ to, subject, html }) => {
   const emailPass = process.env.EMAIL_PASS;
 
   if (!emailUser || !emailPass) {
+    // Extract the link from the HTML for local testing
+    const linkMatch = html.match(/href="([^"]+)"/);
+    const mockLink = linkMatch ? linkMatch[1] : null;
+
     logger.warn('SMTP Credentials (EMAIL_USER/EMAIL_PASS) missing. Mocking email delivery:', {
       to: maskEmail(to),
       subject,
+      mockedLinkForTesting: mockLink || 'No link found',
     });
     return { messageId: 'mock-message-id' };
   }

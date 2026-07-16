@@ -5,12 +5,33 @@ import crypto from 'crypto';
 process.env.RAZORPAY_KEY_ID = 'rzp_test_1234567890';
 process.env.RAZORPAY_KEY_SECRET = 'test_secret_1234567890';
 
+jest.unstable_mockModule('../../src/config/env.js', () => ({
+  default: { NODE_ENV: 'development' }
+}));
+
+const config = (await import('../../src/config/env.js')).default;
 const { verifySignature } = await import('../../src/modules/orders/payment.service.js');
 
 describe('payment.service verifySignature tests', () => {
   const orderId = 'order_id_123';
   const paymentId = 'pay_id_456';
   const payload = `${orderId}|${paymentId}`;
+
+  test('throws internal error in production when Razorpay keys are missing', () => {
+    // Temporarily unset keys to force instance to be null
+    const originalKey = process.env.RAZORPAY_KEY_ID;
+    delete process.env.RAZORPAY_KEY_ID;
+    
+    config.NODE_ENV = 'production';
+
+    expect(() => verifySignature(orderId, paymentId, 'sig')).toThrow(
+      'Payment gateway is not configured. Cannot verify payment.'
+    );
+
+    // Restore
+    process.env.RAZORPAY_KEY_ID = originalKey;
+    config.NODE_ENV = 'development';
+  });
 
   test('returns true for a valid signature matching expected HMAC-SHA256 hash', () => {
     // Generate valid HMAC using the secret

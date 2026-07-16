@@ -19,10 +19,17 @@ export const placeOrderSchema = z.object({
     pincode: z.string().trim().regex(/^\d{6}$/, 'Pincode must be exactly 6 digits'),
   }),
   instructions: z.string().trim().max(300).transform(sanitizeString).optional().default(''),
-  paymentMode: z.enum(['UPI', 'CARD', 'NETBANKING', 'COD'], {
-    errorMap: () => ({ message: 'Payment mode must be UPI, CARD, NETBANKING, or COD' }),
+  paymentMode: z.enum(['UPI', 'CARD', 'NETBANKING', 'COD', 'ONLINE'], {
+    errorMap: () => ({ message: 'Payment mode must be UPI, CARD, NETBANKING, COD, or ONLINE' }),
   }),
   couponCode: z.string().trim().toUpperCase().optional(),
+  items: z.array(
+    z.object({
+      productId: objectIdSchema,
+      qty: z.coerce.number().int().positive(),
+      outletId: objectIdSchema.optional(),
+    })
+  ).optional(),
 });
 
 export const verifyPaymentSchema = z.object({

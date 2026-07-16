@@ -43,3 +43,18 @@ export const createOutlet = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getOutlets = async (req, res) => {
+  const result = await outletService.getOutlets(req.query);
+  res.status(200).json({ success: true, data: result });
+};
+
+export const approveOutlet = async (req, res) => {
+  const result = await outletService.approveOutlet(req.params.id, req.user.userId);
+  res.status(200).json({ success: true, data: result });
+};
+
+export const suspendOutlet = async (req, res) => {
+  const result = await outletService.suspendOutlet(req.params.id, req.user.userId);
+  res.status(200).json({ success: true, data: result });
+};

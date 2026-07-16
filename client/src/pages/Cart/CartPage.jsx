@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../features/cart/hooks/useCart';
 import { useAuth } from '../../hooks/useAuth';
 import { useUIStore } from '../../store/uiStore';
 import { useOutletStore } from '../../store/outletStore';
 import { authService } from '../../features/auth/services/auth.service';
+import { orderService } from '../../features/orders/services/order.service';
 import { useAuthStore } from '../../store/authStore';
 
 const CartPage = () => {
+  const navigate = useNavigate();
   const { items, updateQuantity, clearCart, subtotal } = useCart();
   const { isAuthenticated, user, token, refreshToken } = useAuth();
   const { setAuth } = useAuthStore();
@@ -60,6 +62,117 @@ const CartPage = () => {
   const discount = 0; // Hook up to offers if needed
   const charityAmount = donateCharity ? 2 : 0;
   const totalPayable = subtotal + tax - discount + charityAmount;
+
+  // Razorpay Integration Logic
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (window.Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!isAuthenticated) {
+      openAuthModal();
+      return;
+    }
+    if (orderType === 'delivery' && !selectedAddressId) {
+      alert('Please select a delivery address');
+      return;
+    }
+
+    try {
+      let finalAddress = null;
+      if (orderType === 'delivery') {
+        const addr = addresses.find(a => a._id === selectedAddressId);
+        if (addr) {
+          finalAddress = {
+            street: addr.street,
+            city: addr.city,
+            state: addr.state,
+            pincode: addr.zipCode || '000000'
+          };
+        }
+      } else {
+        finalAddress = {
+          street: selectedOutlet?.address || 'Takeaway/Dine-In',
+          city: 'Store',
+          state: 'Location',
+          pincode: '000000'
+        };
+      }
+
+      // 1. Create order on the backend securely
+      const orderPayload = {
+        paymentMode: 'ONLINE', // Or toggle based on UI selection
+        address: finalAddress,
+        instructions: '',
+        items: items.map(item => ({
+          productId: item.id || item._id,
+          qty: item.quantity,
+          outletId: selectedOutlet?._id
+        }))
+      };
+      
+      const orderRes = await orderService.placeOrder(orderPayload);
+      
+      // If backend mock mode creates a mock ID, or real Razorpay ID
+      const { razorpayOrderId, totalAmount, _id } = orderRes;
+
+      // 2. Load Razorpay Script
+      const res = await loadRazorpayScript();
+      if (!res) {
+        alert('Razorpay SDK failed to load. Are you online?');
+        return;
+      }
+
+      // 3. Initialize Razorpay options
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'your-key-id', 
+        amount: Math.round(totalAmount * 100), 
+        currency: 'INR',
+        name: 'Velvet Bytes',
+        description: 'Food Order Payment',
+        order_id: razorpayOrderId,
+        handler: async function (response) {
+          try {
+            // 4. Verify payment securely on backend
+            await orderService.verifyPayment(_id, {
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature
+            });
+            clearCart();
+            alert('Payment Successful & Order Verified!');
+            navigate('/account/orders');
+          } catch (error) {
+            alert('Payment verification failed on server.');
+          }
+        },
+        prefill: {
+          name: user?.name || '',
+          email: user?.email || '',
+          contact: user?.phone || ''
+        },
+        theme: {
+          color: '#703b29'
+        }
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
+    } catch (error) {
+      console.error(error);
+      alert(error.response?.data?.message || 'Failed to place order');
+    }
+  };
 
   return (
     <div className="bg-surface-container-lowest min-h-screen">
@@ -226,76 +339,7 @@ const CartPage = () => {
               )}
 
               {/* Place Order (Development Mock) */}
-              <div className="mb-8">
-                <button
-                  onClick={async () => {
-                    if (!isAuthenticated) {
-                      openAuthModal('login');
-                      return;
-                    }
-                    if (!selectedOutlet) {
-                      alert('Please select an outlet first.');
-                      return;
-                    }
-                    if (items.length === 0) {
-                      alert('Your cart is empty! Please add some items before placing an order.');
-                      return;
-                    }
-                    
-                    let finalAddress = null;
-                    if (orderMode === 'delivery') {
-                      if (!selectedAddressId) {
-                        alert('Please select a delivery address or add a new one.');
-                        return;
-                      }
-                      const addr = addresses.find(a => a._id === selectedAddressId);
-                      if (addr) {
-                        finalAddress = {
-                          street: addr.street,
-                          city: addr.city,
-                          state: addr.state,
-                          pincode: addr.zipCode || '000000'
-                        };
-                      }
-                    } else {
-                      finalAddress = {
-                        street: selectedOutlet.address || 'Takeaway/Dine-In',
-                        city: 'Store',
-                        state: 'Location',
-                        pincode: '000000'
-                      };
-                    }
 
-                    try {
-                      // Import API dynamically or use fetch if api isn't imported
-                      // Assuming fetch works if we don't have api at top level
-                      const { api } = await import('../../utils/api');
-                      
-                      // Bypass backend Cart logic by passing items directly to the order endpoint
-                      const payload = {
-                        address: finalAddress,
-                        paymentMode: 'COD',
-                        instructions: orderMode === 'delivery' ? 'Deliver to door' : 'Self pickup/Dine-in',
-                        mockItems: items.map(item => ({
-                          productId: item.id || item._id,
-                          qty: item.quantity,
-                          outletId: selectedOutlet._id
-                        }))
-                      };
-                      
-                      const res = await api.post('/orders', payload);
-                      alert('Order placed successfully! Order ID: ' + res.data.data._id);
-                      clearCart();
-                    } catch (error) {
-                      console.error(error);
-                      alert(error.response?.data?.message || 'Failed to place order');
-                    }
-                  }}
-                  className="w-full bg-white hover:bg-neutral-50 transition-colors rounded-xl shadow-sm border border-neutral-100 p-6 flex justify-center cursor-pointer"
-                >
-                  <h3 className="font-headline-lg text-2xl font-black text-[#703b29] uppercase tracking-widest py-1">Place Order</h3>
-                </button>
-              </div>
 
             </div>
 
@@ -411,6 +455,13 @@ const CartPage = () => {
                   <p className="font-black text-on-surface uppercase tracking-wider text-[15px]">TOTAL PAYABLE</p>
                   <p className="font-black text-lg text-on-surface">₹{totalPayable.toFixed(2)}</p>
                 </div>
+                
+                <button 
+                  onClick={handlePlaceOrder}
+                  className="w-full bg-[#703b29] hover:bg-[#5a2e20] text-white font-black py-4 rounded-xl mt-4 tracking-wide shadow-md transition-all active:scale-95"
+                >
+                  PLACE ORDER
+                </button>
                 
               </div>
             </div>

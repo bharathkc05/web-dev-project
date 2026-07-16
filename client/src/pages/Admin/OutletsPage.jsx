@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { adminService } from './services/admin.service';
+import { adminService } from '../../features/admin/services/admin.service';
 import { useLocation } from 'react-router-dom';
 
 export const OutletsPage = () => {

@@ -1,12 +1,9 @@
 
 import {
-  approveOutlet as approveOutletService,
   deleteUser as deleteUserService,
   getAuditLogs as getAuditLogsService,
-  getOutlets as getOutletsService,
   getPlatformAnalytics as getPlatformAnalyticsService,
   getUsers as getUsersService,
-  suspendOutlet as suspendOutletService,
   suspendUser as suspendUserService,
   unsuspendUser as unsuspendUserService,
   assignManager as assignManagerService,
@@ -37,20 +34,6 @@ export const deleteUser = async (req, res) => {
   res.status(200).json({ success: true, data: result });
 };
 
-export const getOutlets = async (req, res) => {
-  const result = await getOutletsService(req.query);
-  res.status(200).json({ success: true, data: result });
-};
-
-export const approveOutlet = async (req, res) => {
-  const result = await approveOutletService(req.params.id, req.user.userId);
-  res.status(200).json({ success: true, data: result });
-};
-
-export const suspendOutlet = async (req, res) => {
-  const result = await suspendOutletService(req.params.id, req.user.userId);
-  res.status(200).json({ success: true, data: result });
-};
 
 export const getPlatformAnalytics = async (req, res) => {
   const result = await getPlatformAnalyticsService();

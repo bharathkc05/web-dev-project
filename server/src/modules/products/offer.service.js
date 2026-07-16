@@ -30,7 +30,7 @@ export const validateOffer = async (code, outletId, subtotal) => {
   }
 
   if (subtotal < offer.minOrderValue) {
-    throw ApiError.badRequest(`Minimum order value of $${offer.minOrderValue} is required to use this offer`);
+    throw ApiError.badRequest(`Minimum order value of ₹${offer.minOrderValue} is required to use this offer`);
   }
 
   return offer.toJSON();
@@ -80,7 +80,7 @@ export const validateAndUseOffer = async (code, outletId, subtotal) => {
   if (subtotal < offer.minOrderValue) {
     // Rollback the usage increment since the order doesn't qualify
     await Offer.findByIdAndUpdate(offer._id, { $inc: { usedCount: -1 } });
-    throw ApiError.badRequest(`Minimum order value of $${offer.minOrderValue} is required to use this offer`);
+    throw ApiError.badRequest(`Minimum order value of ₹${offer.minOrderValue} is required to use this offer`);
   }
 
   return offer.toJSON();

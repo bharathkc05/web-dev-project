@@ -47,3 +47,12 @@ Thumbs.db
 graphify-out/
 logs/
 server/logs/
+
+# Agent & AI metadata files
+.agents/
+.github/
+CLAUDE.md
+codebase_analysis.md
+test_output.txt
+tree_files.txt
+tree.txt

@@ -8,6 +8,8 @@ import { connectDB, disconnectDB } from './config/db.js';
 import { connectRedis, disconnectRedis } from './shared/utils/redis.js';
 import { initOrderWorker } from './modules/orders/order.worker.js';
 import { init as initSocketManager } from './shared/utils/socketManager.js';
+import { connectProducer, disconnectProducer } from './shared/kafka/producer.js';
+import { startConsumer, stopConsumer } from './shared/kafka/consumer.js';
 import logger from './shared/utils/logger.js';
 
 let server;
@@ -25,6 +27,10 @@ const startServer = async () => {
 
     // Initialize BullMQ workers
     await initOrderWorker();
+
+    // Initialize Kafka
+    await connectProducer();
+    await startConsumer();
 
     // Create HTTP server from Express app
     server = http.createServer(app);
@@ -139,6 +145,9 @@ const shutdown = async (code = 0) => {
     // 3. Disconnect from MongoDB Mongoose connection
     await disconnectDB();
     logger.info('MongoDB connection disconnected successfully');
+
+    await disconnectProducer();
+    await stopConsumer();
 
     logger.info('Graceful shutdown completed successfully. Goodbye.');
     process.exit(code);

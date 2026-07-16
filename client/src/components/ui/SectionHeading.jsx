@@ -6,7 +6,6 @@ export const SectionHeading = ({ title, showSeeAll = false, onSeeAllClick }) => 
       </h2>
       {showSeeAll && (
         <a
-          href="#"
           onClick={onSeeAllClick}
           className="text-primary font-bold hover:underline flex items-center text-sm md:text-base"
         >

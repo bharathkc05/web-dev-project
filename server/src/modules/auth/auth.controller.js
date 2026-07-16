@@ -10,7 +10,20 @@ import {
   removeAddress,
   setDefaultAddress,
   toggleFavouriteProduct,
+  forgotPassword as forgotPasswordService,
+  resetPassword as resetPasswordService,
 } from './auth.service.js';
+
+export const forgotPassword = async (req, res) => {
+  await forgotPasswordService(req.body.email);
+  // Always return the same success message to prevent user enumeration
+  res.status(200).json({ success: true, message: 'If an account exists, a password reset link has been sent to the email.' });
+};
+
+export const resetPassword = async (req, res) => {
+  await resetPasswordService(req.params.token, req.body.password);
+  res.status(200).json({ success: true, message: 'Password has been reset successfully' });
+};
 
 export const signup = async (req, res) => {
   const result = await createUser(req.body);

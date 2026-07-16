@@ -4,7 +4,7 @@ import { USER_ERRORS } from '../../shared/constants/errorMessages.js';
 import { PAYMENT_STATUS } from '../../shared/constants/paymentStatuses.js';
 import User from '../auth/auth.model.js';
 import AuditLog from '../../shared/models/auditLog.model.js';
-import Outlet from '../../shared/models/outlet.model.js';
+import Outlet from '../outlets/outlet.model.js';
 import Order from '../../shared/models/order.model.js';
 import { Product } from '../products/product.model.js';
 import { MasterProduct } from '../../shared/models/masterProduct.model.js';
@@ -226,128 +226,6 @@ export const assignManager = async (targetId, outletId, actorId) => {
   return user;
 };
 
-export const getOutlets = async (filters = {}) => {
-  const page = filters.page || 1;
-  const limit = filters.limit || 20;
-  const query = { deletedAt: null };
-
-  if (typeof filters.isApproved === 'boolean') {
-    query.isApproved = filters.isApproved;
-  }
-
-  if (typeof filters.isActive === 'boolean') {
-    query.isActive = filters.isActive;
-  }
-
-  const [items, total, totalMasterProducts] = await Promise.all([
-    Outlet.find(query)
-      .sort({ createdAt: -1, _id: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .lean(),
-    Outlet.countDocuments(query),
-    MasterProduct.countDocuments({ isActive: true }),
-  ]);
-
-  const outletIds = items.map(outlet => outlet._id);
-
-  const productCounts = await Product.aggregate([
-    { $match: { outletId: { $in: outletIds } } },
-    {
-      $group: {
-        _id: '$outletId',
-        totalActivatedCount: { $sum: 1 },
-        activeProductsCount: { $sum: { $cond: ['$isAvailable', 1, 0] } },
-      },
-    },
-  ]);
-
-  const countsMap = productCounts.reduce((acc, curr) => {
-    acc[curr._id.toString()] = curr;
-    return acc;
-  }, {});
-
-  const enrichedItems = items.map(outlet => {
-    const counts = countsMap[outlet._id.toString()] || { totalActivatedCount: 0, activeProductsCount: 0 };
-    return {
-      ...outlet,
-      activeProductsCount: counts.activeProductsCount,
-      totalActivatedCount: counts.totalActivatedCount,
-      totalMasterProducts,
-    };
-  });
-
-  return {
-    items: enrichedItems,
-    pageInfo: {
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit) || 1,
-    },
-  };
-};
-
-export const approveOutlet = async (outletId, actorId) => {
-  const actorRole = await getActorRole(actorId);
-
-  const outlet = await Outlet.findOneAndUpdate(
-    { _id: outletId, deletedAt: null },
-    {
-      $set: {
-        isApproved: true,
-        isActive: true,
-      },
-      $unset: {
-        suspendedAt: 1,
-      },
-    },
-    { new: true }
-  ).lean();
-
-  if (!outlet) {
-    throw ApiError.notFound('Outlet not found');
-  }
-
-  await writeAuditLog({
-    actorId,
-    role: actorRole,
-    action: 'OUTLET_APPROVE',
-    targetType: 'OUTLET',
-    targetId: outletId,
-  });
-
-  return outlet;
-};
-
-export const suspendOutlet = async (outletId, actorId) => {
-  const actorRole = await getActorRole(actorId);
-
-  const outlet = await Outlet.findOneAndUpdate(
-    { _id: outletId, deletedAt: null },
-    {
-      $set: {
-        isActive: false,
-        suspendedAt: new Date(),
-      },
-    },
-    { new: true }
-  ).lean();
-
-  if (!outlet) {
-    throw ApiError.notFound('Outlet not found');
-  }
-
-  await writeAuditLog({
-    actorId,
-    role: actorRole,
-    action: 'OUTLET_SUSPEND',
-    targetType: 'OUTLET',
-    targetId: outletId,
-  });
-
-  return outlet;
-};
 
 export const getPlatformAnalytics = async () => {
   const thirtyDaysAgo = new Date();

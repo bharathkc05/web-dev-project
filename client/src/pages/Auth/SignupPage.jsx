@@ -27,7 +27,13 @@ export const SignupPage = () => {
       await signup({ name, email, password });
       closeAuthModal(); // Close modal on success
     } catch (err) {
-      setError(err.message || 'Failed to create account. Please try again.');
+      if (err.errors) {
+        // If there are detailed validation errors from Zod, join them
+        const errorMessages = Object.values(err.errors).join('. ');
+        setError(errorMessages);
+      } else {
+        setError(err.message || 'Failed to create account. Please try again.');
+      }
     } finally {
       setIsLoading(false);
     }

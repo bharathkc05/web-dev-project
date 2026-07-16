@@ -3,6 +3,8 @@ import { useUIStore } from '../../../store/uiStore';
 import { LoginPage } from '../../../pages/Auth/LoginPage';
 import { SignupPage } from '../../../pages/Auth/SignupPage';
 
+import { ForgotPasswordPage } from '../../../pages/Auth/ForgotPasswordPage';
+
 export const AuthModal = () => {
   const { isAuthModalOpen, authModalView, closeAuthModal } = useUIStore();
   const modalRef = useRef(null);
@@ -53,7 +55,9 @@ export const AuthModal = () => {
           </svg>
         </button>
 
-        {authModalView === 'login' ? <LoginPage /> : <SignupPage />}
+        {authModalView === 'login' && <LoginPage />}
+        {authModalView === 'signup' && <SignupPage />}
+        {authModalView === 'forgot-password' && <ForgotPasswordPage />}
       </div>
     </div>
   );

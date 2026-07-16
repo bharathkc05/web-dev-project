@@ -13,6 +13,7 @@ import { PAYMENT_STATUS } from '../../shared/constants/paymentStatuses.js';
 import { ROLES } from '../../shared/constants/roles.js';
 import { TAX_RATE } from '../../shared/constants/taxConfig.js';
 import { pushBullMQJob } from './order.worker.js';
+import { publishEvent } from '../../shared/kafka/producer.js';
 import logger from '../../shared/utils/logger.js';
 
 /**
@@ -107,23 +108,31 @@ export const removeFromCart = async (userId, productId) => {
 /**
  * Place a new Order (always from the user's actual cart — no bypass)
  */
-export const placeOrder = async (userId, address, instructions, paymentMode, couponCode = null) => {
-  logger.debug('placeOrder START', { userId, paymentMode });
+export const placeOrder = async (userId, address, instructions, paymentMode, couponCode = null, directItems = null) => {
+  logger.debug('placeOrder START', { userId, paymentMode, directItemsCount: directItems?.length });
 
-  const cart = await Cart.findOne({ userId }).populate({
-    path: 'items.productId',
-    populate: { path: 'masterProductId' }
-  });
+  let itemsToProcess = [];
+  let cartOutletId = null;
 
-  if (!cart || cart.items.length === 0) {
-    throw ApiError.badRequest('Your cart is empty');
+  if (directItems && directItems.length > 0) {
+    // Bypass backend cart (frontend sent items directly)
+    itemsToProcess = directItems;
+    cartOutletId = directItems[0].outletId;
+  } else {
+    // Fallback to database cart
+    const cart = await Cart.findOne({ userId });
+    if (!cart || cart.items.length === 0) {
+      throw ApiError.badRequest('Your cart is empty');
+    }
+    itemsToProcess = cart.items;
+    cartOutletId = cart.outletId;
   }
   
   const orderItems = [];
   let subtotal = 0;
 
-  for (const item of cart.items) {
-    const product = item.productId;
+  for (const item of itemsToProcess) {
+    const product = await Product.findById(item.productId).populate('masterProductId');
     if (!product || !product.isAvailable) {
       throw ApiError.badRequest(`Product ${product?.masterProductId?.name || 'Unknown'} is currently unavailable`);
     }
@@ -140,8 +149,8 @@ export const placeOrder = async (userId, address, instructions, paymentMode, cou
 
   let discount = 0;
   if (couponCode) {
-    const offer = await validateAndUseOffer(couponCode, cart.outletId, subtotal);
-    discount = calculateDiscount(offer, cart.items, subtotal);
+    const offer = await validateAndUseOffer(couponCode, cartOutletId, subtotal);
+    discount = calculateDiscount(offer, itemsToProcess, subtotal);
   }
 
   const tax = (subtotal - discount) * TAX_RATE; 
@@ -150,7 +159,7 @@ export const placeOrder = async (userId, address, instructions, paymentMode, cou
   logger.debug('Creating order document in DB');
   const order = await Order.create({
     userId,
-    outletId: cart.outletId,
+    outletId: cartOutletId,
     items: orderItems,
     totalAmount: Math.round(totalAmount * 100) / 100,
     tax: Math.round(tax * 100) / 100,
@@ -169,6 +178,7 @@ export const placeOrder = async (userId, address, instructions, paymentMode, cou
     logger.debug('Pushing to BullMQ');
     pushBullMQJob(order._id, 'ORDER_CONFIRMED').catch(e => logger.error('BullMQ push error:', { message: e.message }));
     emitToRoom(String(order.outletId), SOCKET_EVENTS.ORDER_CREATED, order.toJSON());
+    publishEvent('orders.events', 'ORDER_CREATED', order.toJSON(), String(order._id));
   } else {
     const rzpOrderId = await createRazorpayOrder(order.totalAmount, order._id);
     order.razorpayOrderId = rzpOrderId;
@@ -213,8 +223,11 @@ export const verifyPayment = async (orderId, userId, razorpayData) => {
     // Queue worker job
     await pushBullMQJob(order._id, 'ORDER_CONFIRMED');
 
-    // Notify Outlet
+    // Notify Outlet (Socket)
     emitToRoom(String(order.outletId), SOCKET_EVENTS.ORDER_CREATED, order.toJSON());
+    
+    // Publish to Kafka (Microservices Sync)
+    publishEvent('orders.events', 'ORDER_CREATED', order.toJSON(), String(order._id));
 
     return order.toJSON();
   } else {
@@ -266,6 +279,8 @@ export const updateOrderStatus = async (orderId, status, user) => {
   }
   emitToRoom(String(order.outletId), 'ORDER_STATUS_UPDATED', orderJSON);
   emitToRoom(String(order.userId), 'ORDER_STATUS_UPDATED', orderJSON);
+  
+  publishEvent('orders.events', 'ORDER_STATUS_UPDATED', orderJSON, String(order._id));
 
   return orderJSON;
 };

@@ -19,7 +19,7 @@ const mockVerifySignature = jest.fn();
 const mockInitiateRefund = jest.fn();
 
 const mockEmitToRoom = jest.fn();
-const mockPushBullMQJob = jest.fn();
+const mockPushBullMQJob = jest.fn().mockResolvedValue(true);
 
 // Mock Mongoose models
 jest.unstable_mockModule('../../src/modules/orders/order.model.js', () => ({
@@ -44,7 +44,7 @@ jest.unstable_mockModule('../../src/modules/products/product.model.js', () => ({
 }));
 
 jest.unstable_mockModule('../../src/modules/products/offer.service.js', () => ({
-  validateOffer: mockValidateOffer,
+  validateAndUseOffer: mockValidateOffer,
   calculateDiscount: jest.fn().mockReturnValue(0),
 }));
 
@@ -83,7 +83,7 @@ const MOCK_ORDER_ID = '60c72b2f9b1d8a2c148b456a';
 const createTestProduct = (overrides = {}) => ({
   _id: MOCK_PRODUCT_ID,
   outletId: MOCK_OUTLET_ID,
-  name: 'Burger',
+  masterProductId: { name: 'Burger' },
   price: 5.99,
   isAvailable: true,
   ...overrides,

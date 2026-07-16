@@ -1,6 +1,6 @@
-import { Category } from '../../shared/models/category.model.js';
-import { QuickTab } from '../../shared/models/quickTab.model.js';
-import { Banner } from '../../shared/models/banner.model.js';
+import { Category } from './category.model.js';
+import { QuickTab } from './quickTab.model.js';
+import { Banner } from './banner.model.js';
 import { ApiError } from '../../shared/utils/ApiError.js';
 
 // --- Categories ---

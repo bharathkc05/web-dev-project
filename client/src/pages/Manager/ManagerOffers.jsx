@@ -126,7 +126,7 @@ export const ManagerOffers = () => {
                       <span className="text-on-surface-variant font-medium">Discount</span>
                       <span className="font-bold text-on-surface">
                         {offer.type === 'PERCENT' ? `${offer.value}% OFF` : 
-                         offer.type === 'FLAT' ? `$${offer.value.toFixed(2)} OFF` : 
+                         offer.type === 'FLAT' ? `₹${offer.value.toFixed(2)} OFF` : 
                          'Buy 1 Get 1 Free'}
                       </span>
                     </div>
@@ -158,7 +158,7 @@ export const ManagerOffers = () => {
                 <div className="bg-surface-container-lowest px-6 py-3 border-t border-surface-container-high text-xs text-on-surface-variant font-medium flex items-center justify-between">
                   <span>Expires: {new Date(offer.expiryDate).toLocaleDateString()}</span>
                   {offer.maxDiscount && offer.type === 'PERCENT' && (
-                    <span>Max: ${offer.maxDiscount}</span>
+                    <span>Max: ₹{offer.maxDiscount}</span>
                   )}
                 </div>
               </div>
@@ -190,7 +190,7 @@ export const ManagerOffers = () => {
                   <div>
                     <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Discount Type</label>
                     <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-orange/50 text-sm bg-[#fcf9f8] text-black font-semibold">
-                      <option value="FLAT">Flat Amount ($)</option>
+                      <option value="FLAT">Flat Amount (₹)</option>
                       <option value="PERCENT">Percentage (%)</option>
                       <option value="BOGO">Buy 1 Get 1 Free</option>
                     </select>
@@ -205,7 +205,7 @@ export const ManagerOffers = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Min Order Value ($)</label>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Min Order Value (₹)</label>
                     <input type="number" step="0.01" required value={formData.minOrderValue} onChange={(e) => setFormData({...formData, minOrderValue: e.target.value})} className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-orange/50 text-sm bg-[#fcf9f8] text-black font-semibold" placeholder="0.00" />
                   </div>
                   <div>

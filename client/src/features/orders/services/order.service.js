@@ -15,4 +15,14 @@ export const orderService = {
     const response = await api.patch(`/orders/${id}/status`, { status });
     return response.data.data;
   },
+
+  placeOrder: async (orderData) => {
+    const response = await api.post('/orders', orderData);
+    return response.data.data;
+  },
+
+  verifyPayment: async (orderId, paymentDetails) => {
+    const response = await api.post(`/orders/${orderId}/payment/verify`, paymentDetails);
+    return response.data.data;
+  }
 };

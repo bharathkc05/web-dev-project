@@ -11,7 +11,7 @@ import catalogueRouter from '../modules/catalogue/catalogue.routes.js';
 const router = Router();
 // Mount module routers
 router.use('/auth', authRouter);
-router.use('/outlets', outletRouter);
+router.use('/', outletRouter);
 router.use('/products', productRouter);
 router.use('/admin/master-products', masterProductRouter);
 router.use('/', catalogueRouter);

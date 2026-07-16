@@ -39,7 +39,7 @@ export const AccountLayout = () => {
             {/* User Profile Card */}
             <div className="bg-white rounded-xl shadow-sm px-6 py-8 flex items-center gap-6">
               <div className="flex flex-col w-full">
-                <Link to="/account/profile" className="flex items-center gap-2 group cursor-pointer w-max">
+                <Link to="/account/profile" state={{ edit: true }} className="flex items-center gap-2 group cursor-pointer w-max">
                   <h3 className="font-display font-black text-xl text-black uppercase tracking-wide group-hover:text-primary transition-colors">{user?.name || 'Guest'}</h3>
                   <i className="fas fa-chevron-right text-orange text-xs"></i>
                 </Link>
@@ -49,7 +49,7 @@ export const AccountLayout = () => {
               </div>
             </div>
 
-
+      
             {/* Navigation Menu */}
             <nav className="flex flex-col gap-4 mt-2">
               {navItems.map((item, index) => (
