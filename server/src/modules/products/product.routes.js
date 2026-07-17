@@ -13,6 +13,10 @@ import {
   submitReview,
   applyOffer,
   getAvailableMasterProducts,
+  getActiveOffers,
+  updateOffer,
+  deleteOffer,
+  createCampaign,
 } from './product.controller.js';
 import {
   activateProductSchema,
@@ -21,8 +25,9 @@ import {
   reviewSchema,
   productFilterSchema,
   idParamSchema,
+  personalizedCampaignSchema,
 } from './product.schema.js';
-import authenticate from '../../shared/middleware/authenticate.js';
+import authenticate, { optionalAuthenticate } from '../../shared/middleware/authenticate.js';
 import authorize from '../../shared/middleware/authorize.js';
 import { validateRequest, validateQuery, validateParams } from '../../shared/middleware/validate.js';
 import asyncHandler from '../../shared/middleware/asyncHandler.js';
@@ -36,6 +41,7 @@ const customerOnly = [authenticate, authorize(ROLES.CUSTOMER)];
 // Public routes
 router.get('/', validateQuery(productFilterSchema), asyncHandler(getProducts));
 router.get('/popular', asyncHandler(getPopularProducts));
+router.get('/outlets/:outletId/offers/active', optionalAuthenticate, asyncHandler(getActiveOffers));
 
 // Protected routes - Outlet Product Activation and Management
 router.get(
@@ -69,6 +75,26 @@ router.post(
   ...managerOrAdmin,
   validateRequest(offerSchema),
   asyncHandler(createOffer)
+);
+
+router.put(
+  '/offers/:id',
+  ...managerOrAdmin,
+  validateRequest(offerSchema),
+  asyncHandler(updateOffer)
+);
+
+router.delete(
+  '/offers/:id',
+  ...managerOrAdmin,
+  asyncHandler(deleteOffer)
+);
+
+router.post(
+  '/campaigns',
+  ...managerOrAdmin,
+  validateRequest(personalizedCampaignSchema),
+  asyncHandler(createCampaign)
 );
 
 router.post(

@@ -9,7 +9,7 @@ export const useCartStore = create(
     (set, get) => ({
       items: [],
       outletId: null,
-      appliedOffer: null, // { code, discountValue }
+      appliedOffer: null, // { code, type, value, maxDiscount }
 
       addItem: (product) => {
         const { items, outletId } = get();
@@ -38,12 +38,15 @@ export const useCartStore = create(
 
       removeItem: (id) => {
         const remainingItems = get().items.filter((item) => item.id !== id);
+        const newSubtotal = remainingItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const currentOffer = get().appliedOffer;
+
         set({
           items: remainingItems,
           // Clear outletId if cart becomes empty
           outletId: remainingItems.length === 0 ? null : get().outletId,
-          // Clear offer if cart becomes empty (optional logic, but good practice)
-          appliedOffer: remainingItems.length === 0 ? null : get().appliedOffer,
+          // Clear offer if cart becomes empty or if subtotal drops below minOrderValue
+          appliedOffer: (remainingItems.length === 0 || (currentOffer && newSubtotal < currentOffer.minOrderValue)) ? null : currentOffer,
         });
       },
 
@@ -57,16 +60,19 @@ export const useCartStore = create(
           })
           .filter((item) => item.quantity > 0);
 
+        const newSubtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+        const currentOffer = get().appliedOffer;
+
         set({
           items,
           outletId: items.length === 0 ? null : get().outletId,
-          appliedOffer: items.length === 0 ? null : get().appliedOffer,
+          appliedOffer: (items.length === 0 || (currentOffer && newSubtotal < currentOffer.minOrderValue)) ? null : currentOffer,
         });
       },
 
       clearCart: () => set({ items: [], outletId: null, appliedOffer: null }),
 
-      applyOffer: (code, discountValue) => set({ appliedOffer: { code, discountValue } }),
+      applyOffer: (offerData) => set({ appliedOffer: offerData }),
       
       clearOffer: () => set({ appliedOffer: null }),
 
@@ -80,23 +86,35 @@ export const useCartStore = create(
 
       getTotals: () => {
         const subtotal = get().getSubtotal();
-        const tax = subtotal * TAX_RATE; // Matches server-side TAX_RATE
         
         // Calculate discount based on offer
         let discount = 0;
         const offer = get().appliedOffer;
         if (offer) {
-          // If discountValue is percentage vs flat rate? Let's assume flat rate for simplicity, 
-          // or if it's < 1 it might be a percentage (e.g., 0.20 for 20%)
-          if (offer.discountValue < 1 && offer.discountValue > 0) {
-             discount = subtotal * offer.discountValue;
-          } else {
-             discount = offer.discountValue;
+          if (offer.type === 'FLAT') {
+            discount = Math.min(offer.value, subtotal);
+          } else if (offer.type === 'PERCENT') {
+            discount = subtotal * (offer.value / 100);
+            if (offer.maxDiscount) {
+              discount = Math.min(discount, offer.maxDiscount);
+            }
+            discount = Math.min(discount, subtotal);
+          } else if (offer.type === 'BOGO') {
+            const items = get().items;
+            const flatPrices = items.flatMap((item) => {
+              const qty = item.qty || item.quantity || 0;
+              return Array(qty).fill(item.price);
+            });
+            if (flatPrices.length >= 2) {
+              flatPrices.sort((a, b) => a - b);
+              const freeCount = Math.floor(flatPrices.length / 2);
+              discount = flatPrices.slice(0, freeCount).reduce((sum, price) => sum + price, 0);
+              discount = Math.min(discount, subtotal);
+            }
           }
-          // Don't allow discount to exceed subtotal
-          discount = Math.min(discount, subtotal);
         }
 
+        const tax = (subtotal - discount) * TAX_RATE; // Matches server-side TAX_RATE
         const total = subtotal + tax - discount;
         
         return { subtotal, tax, discount, total };

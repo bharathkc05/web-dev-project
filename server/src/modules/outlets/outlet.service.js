@@ -1,5 +1,5 @@
 import Outlet from './outlet.model.js';
-import { MasterProduct } from '../../shared/models/masterProduct.model.js';
+import { MasterProduct } from '../products/masterProduct.model.js';
 import { Product } from '../products/product.model.js';
 import { ApiError } from '../../shared/utils/ApiError.js';
 import AuditLog from '../../shared/models/auditLog.model.js';

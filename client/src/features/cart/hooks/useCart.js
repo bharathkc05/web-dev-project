@@ -6,6 +6,10 @@ export const useCart = () => {
   const removeItem = useCartStore((state) => state.removeItem);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
   const clearCart = useCartStore((state) => state.clearCart);
+  const appliedOffer = useCartStore((state) => state.appliedOffer);
+  const applyOffer = useCartStore((state) => state.applyOffer);
+  const clearOffer = useCartStore((state) => state.clearOffer);
+  const getTotals = useCartStore((state) => state.getTotals);
   
   // Calculate dynamically so components always re-render on quantity change
   const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -18,6 +22,10 @@ export const useCart = () => {
     updateQuantity,
     clearCart,
     subtotal,
-    totalCount
+    totalCount,
+    appliedOffer,
+    applyOffer,
+    clearOffer,
+    getTotals
   };
 };

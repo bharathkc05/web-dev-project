@@ -231,7 +231,7 @@ export const getAvailableMasterProducts = async (outletId) => {
   const activatedIds = activatedProducts.map(p => p.masterProductId);
 
   // Find all active master products NOT in that list
-  const { MasterProduct } = await import('./../../shared/models/masterProduct.model.js');
+  const { MasterProduct } = await import('./masterProduct.model.js');
   const available = await MasterProduct.find({
     _id: { $nin: activatedIds },
     isActive: true,
@@ -438,5 +438,14 @@ export const submitReview = async (productId, userId, orderId, data) => {
   return review.toJSON();
 };
 
-export { createOffer, validateOffer, validateAndUseOffer, getOffers } from './offer.service.js';
+export { 
+  createOffer, 
+  validateOffer, 
+  incrementOfferUsage, 
+  updateOffer, 
+  deleteOffer, 
+  getOffers, 
+  getActiveOffers,
+  createPersonalizedCampaign
+} from './offer.service.js';
 

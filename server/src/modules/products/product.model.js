@@ -64,7 +64,7 @@ const offerSchema = new mongoose.Schema(
     outletId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Outlet',
-      required: true,
+      default: null,
       index: true,
     },
     code: {
@@ -108,6 +108,19 @@ const offerSchema = new mongoose.Schema(
       default: null,
       min: 0,
     },
+    isPersonalized: {
+      type: Boolean,
+      default: false,
+    },
+    targetGroup: {
+      type: String,
+      enum: ['ALL', 'DORMANT_30_DAYS', 'LOYAL_5_PLUS_ORDERS', 'FRESH_USERS', null],
+      default: null,
+    },
+    targetUsers: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }],
   },
   { timestamps: true }
 );

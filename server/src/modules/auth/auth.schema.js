@@ -23,7 +23,20 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-export const updateProfileSchema = signupSchema.pick({ name: true, email: true, password: true, phone: true }).partial();
+export const updateProfileSchema = z.object({
+  name: nameSchema.optional(),
+  email: emailSchema.optional(),
+  password: passwordSchema.optional(),
+  phone: phoneSchema.optional(),
+  dateOfBirth: z.string().trim().regex(/^\d{2}\/\d{2}\/\d{4}$/, 'Format must be DD/MM/YYYY').or(z.literal('')).optional(),
+  gender: z.enum(['Male', 'Female', 'Others']).or(z.literal('')).optional(),
+  notificationSettings: z.object({
+    importantMessageAlerts: z.boolean().optional(),
+    orderTracking: z.boolean().optional(),
+    pushNotifications: z.boolean().optional(),
+    exclusiveOffers: z.boolean().optional(),
+  }).optional(),
+});
 
 export const forgotPasswordSchema = z.object({
   email: emailSchema,

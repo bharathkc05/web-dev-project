@@ -89,6 +89,14 @@ const slimSerializeUser = (user) => {
     role: obj.role,
     outletId: obj.outletId || null,
     phone: obj.phone,
+    dateOfBirth: obj.dateOfBirth || null,
+    gender: obj.gender || null,
+    notificationSettings: obj.notificationSettings || {
+      importantMessageAlerts: true,
+      orderTracking: true,
+      pushNotifications: true,
+      exclusiveOffers: true,
+    },
     savedAddresses: obj.savedAddresses || [],
   };
 };
@@ -325,10 +333,27 @@ export const getProfile = async (userId) => {
 };
 
 export const updateProfile = async (userId, data) => {
-  const { name, phone } = data;
+  const { name, phone, dateOfBirth, gender, notificationSettings, email } = data;
+  
+  const updateFields = {};
+  if (name !== undefined) updateFields.name = name;
+  if (phone !== undefined) updateFields.phone = phone;
+  if (dateOfBirth !== undefined) updateFields.dateOfBirth = dateOfBirth;
+  if (gender !== undefined) updateFields.gender = gender;
+  if (notificationSettings !== undefined) updateFields.notificationSettings = notificationSettings;
+
+  if (email) {
+    const normalizedEmail = email.trim().toLowerCase();
+    const existingEmail = await User.findOne({ email: normalizedEmail, _id: { $ne: userId } });
+    if (existingEmail) {
+      throw ApiError.conflict('Email is already in use by another account');
+    }
+    updateFields.email = normalizedEmail;
+  }
+
   const user = await User.findOneAndUpdate(
     { _id: userId, isActive: true },
-    { $set: { name, phone } },
+    { $set: updateFields },
     { new: true }
   );
 

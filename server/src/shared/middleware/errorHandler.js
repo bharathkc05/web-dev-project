@@ -10,14 +10,22 @@ const formatErrorResponse = (message, errors = []) => ({
 });
 
 const logError = (err, req, statusCode) => {
-  logger.error(err.message || 'Unhandled error', {
+  const isOperational = statusCode >= 400 && statusCode < 500;
+  
+  const logData = {
     statusCode,
     method: req.method,
     path: req.originalUrl || req.path,
     ip: req.ip,
     errors: err.errors || [],
-    stack: config.NODE_ENV === 'production' ? undefined : err.stack,
-  });
+  };
+
+  if (isOperational) {
+    logger.warn(err.message || 'Client Error', logData);
+  } else {
+    logData.stack = config.NODE_ENV === 'production' ? undefined : err.stack;
+    logger.error(err.message || 'Unhandled error', logData);
+  }
 };
 
 // eslint-disable-next-line no-unused-vars
@@ -39,8 +47,13 @@ export const errorHandler = (err, req, res, next) => {
   }
   else if (err.code === 11000) {
     statusCode = 409;
-    const field = Object.keys(err.keyValue)[0];
-    message = `${field} already exists`;
+    const fields = Object.keys(err.keyValue || {});
+    // If it's a compound index (like outletId + code), pick the most relevant field for the user message
+    const field = fields.filter(f => !['outletId', 'userId'].includes(f))[0] || fields[0] || 'Field';
+    message = `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`;
+    
+    // Set the err.message so the logger picks up the clean message instead of the raw MongoServerError
+    err.message = message;
     errors = [{ field, message }];
   }
   else if (err.name === 'CastError') {

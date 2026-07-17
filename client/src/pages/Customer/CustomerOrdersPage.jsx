@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { orderService } from '../../features/orders/services/order.service';
 import { formatPrice } from '../../utils/formatPrice';
+import { useCart } from '../../features/cart/hooks/useCart';
 
 export const CustomerOrdersPage = () => {
+  const navigate = useNavigate();
+  const { clearCart, addItem, updateQuantity } = useCart();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -32,6 +35,26 @@ export const CustomerOrdersPage = () => {
       case 'CANCELLED': return 'bg-primary/10 text-primary border border-primary/20';
       default: return 'bg-surface-container text-on-surface-variant';
     }
+  };
+
+  const handleReorder = (order) => {
+    clearCart();
+    // Add each item to the cart
+    order.items.forEach(item => {
+      // Add the item (adds qty 1)
+      addItem({
+        id: item.productId,
+        name: item.name,
+        price: item.price,
+        outletId: order.outletId
+      });
+      // Update quantity if more than 1
+      if (item.qty > 1) {
+        updateQuantity(item.productId, item.qty - 1);
+      }
+    });
+    // Navigate to cart where they can review and apply coupons manually
+    navigate('/cart');
   };
 
   return (
@@ -68,7 +91,7 @@ export const CustomerOrdersPage = () => {
                   </div>
                   
                   <div className="text-sm font-bold text-on-surface-variant mb-1">
-                    {order.items.map(item => `${item.product?.name || 'Unknown Product'} x${item.quantity}`).join(', ')}
+                    {order.items.map(item => `${item.name || 'Unknown Product'} x${item.qty || item.quantity || 1}`).join(', ')}
                   </div>
                   
                   <div className="text-xs font-semibold text-neutral-400">
@@ -85,7 +108,10 @@ export const CustomerOrdersPage = () => {
                       Track
                     </Link>
                   )}
-                  <button className="flex-1 md:flex-none text-center bg-white border-2 border-primary text-primary hover:bg-primary hover:text-white px-6 py-2.5 rounded-full font-bold uppercase tracking-wide text-xs transition-colors">
+                  <button 
+                    onClick={() => handleReorder(order)}
+                    className="flex-1 md:flex-none text-center bg-white border-2 border-primary text-primary hover:bg-primary hover:text-white px-6 py-2.5 rounded-full font-bold uppercase tracking-wide text-xs transition-colors"
+                  >
                     Reorder
                   </button>
                 </div>

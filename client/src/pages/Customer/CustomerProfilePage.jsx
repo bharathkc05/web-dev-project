@@ -9,11 +9,20 @@ export const CustomerProfilePage = () => {
   const { setAuth } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     name: user?.name || '',
-    phone: user?.phone || ''
+    email: user?.email || '',
+    phone: user?.phone || '',
+    dateOfBirth: user?.dateOfBirth || '',
+    gender: user?.gender || '',
+    notificationSettings: user?.notificationSettings || {
+      importantMessageAlerts: true,
+      orderTracking: true,
+      pushNotifications: true,
+      exclusiveOffers: true,
+    }
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -72,7 +81,7 @@ export const CustomerProfilePage = () => {
               <p className="text-sm font-bold text-on-surface-variant mt-1">Customer Account</p>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Email Address</p>
@@ -82,6 +91,14 @@ export const CustomerProfilePage = () => {
               <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Phone Number</p>
               <p className="text-on-surface font-semibold">{user?.phone || 'Not provided'}</p>
             </div>
+            <div>
+              <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Date of Birth</p>
+              <p className="text-on-surface font-semibold">{user?.dateOfBirth || 'Not provided'}</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1">Gender</p>
+              <p className="text-on-surface font-semibold">{user?.gender || 'Not provided'}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -90,13 +107,25 @@ export const CustomerProfilePage = () => {
       {isEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            
+
             <div className="px-8 py-6 border-b border-neutral-100 flex justify-between items-center bg-surface-container-lowest">
               <h3 className="font-display text-xl font-black text-black uppercase tracking-wider">Edit Profile</h3>
-              <button 
+              <button
                 onClick={() => {
                   setIsEditing(false);
-                  setFormData({ name: user?.name || '', phone: user?.phone || '' });
+                  setFormData({
+                    name: user?.name || '',
+                    email: user?.email || '',
+                    phone: user?.phone || '',
+                    dateOfBirth: user?.dateOfBirth || '',
+                    gender: user?.gender || '',
+                    notificationSettings: user?.notificationSettings || {
+                      importantMessageAlerts: true,
+                      orderTracking: true,
+                      pushNotifications: true,
+                      exclusiveOffers: true,
+                    }
+                  });
                   setError('');
                 }}
                 className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container hover:bg-neutral-200 text-neutral-500 transition-colors"
@@ -126,40 +155,66 @@ export const CustomerProfilePage = () => {
               <form onSubmit={handleSave} className="space-y-5">
                 <div>
                   <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Name</label>
-                  <input 
+                  <input
                     required
-                    type="text" 
-                    value={formData.name} 
-                    onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-orange/50 text-sm bg-[#fcf9f8] text-black font-semibold" 
+                    type="text"
+                    value={formData.name}
+                    onChange={e => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-orange/50 text-sm bg-[#fcf9f8] text-black font-semibold"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Mobile Number</label>
-                  <input 
-                    type="tel" 
-                    value={formData.phone} 
-                    onChange={e => setFormData({...formData, phone: e.target.value})}
-                    className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-orange/50 text-sm bg-[#fcf9f8] text-black font-semibold" 
+                  <input
+                    type="tel"
+                    value={formData.phone}
+                    onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-orange/50 text-sm bg-[#fcf9f8] text-black font-semibold"
                     placeholder="e.g. 9876543210"
                   />
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Date of Birth</label>
+                    <input
+                      type="text"
+                      value={formData.dateOfBirth}
+                      onChange={e => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-orange/50 text-sm bg-[#fcf9f8] text-black font-semibold"
+                      placeholder="DD/MM/YYYY"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Gender</label>
+                    <select
+                      value={formData.gender}
+                      onChange={e => setFormData({ ...formData, gender: e.target.value })}
+                      className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-orange/50 text-sm bg-[#fcf9f8] text-black font-semibold"
+                    >
+                      <option value="">Select</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Others">Others</option>
+                    </select>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Email ID</label>
-                  <input 
-                    type="email" 
-                    disabled 
-                    value={user?.email || ''} 
-                    className="w-full px-4 py-3 rounded-lg border border-neutral-200 bg-neutral-100 text-neutral-400 cursor-not-allowed text-sm font-semibold" 
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-4 py-3 rounded-lg border border-neutral-200 focus:outline-none focus:ring-2 focus:ring-orange/50 text-sm bg-[#fcf9f8] text-black font-semibold"
+                    placeholder="e.g. hello@example.com"
                   />
-                  <p className="text-[10px] text-neutral-400 font-bold mt-1 uppercase tracking-wide">Email cannot be changed</p>
                 </div>
-                
+
                 <div className="pt-6">
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     disabled={isLoading}
                     className="w-full py-4 bg-orange text-white rounded-lg font-black uppercase tracking-wider text-sm hover:bg-orange/90 transition-colors shadow-sm disabled:opacity-70 flex justify-center items-center"
                   >

@@ -14,6 +14,7 @@ export const AdminSidebar = () => {
     { to: '/admin/quicktabs', label: 'Quick Tabs', icon: 'fas fa-bolt' },
     { to: '/admin/banners', label: 'Banners', icon: 'fas fa-images' },
     { to: '/admin/audit', label: 'Audit Log', icon: 'fas fa-history' },
+    { to: '/admin/marketing', label: 'Marketing', icon: 'fas fa-bullhorn' },
   ];
 
   return (

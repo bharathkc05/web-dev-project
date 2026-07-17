@@ -1,4 +1,4 @@
-import { MasterProduct } from '../../shared/models/masterProduct.model.js';
+import { MasterProduct } from './masterProduct.model.js';
 import { ApiError } from '../../shared/utils/ApiError.js';
 import { uploadImage, deleteImage } from '../../shared/utils/cloudinary.js';
 

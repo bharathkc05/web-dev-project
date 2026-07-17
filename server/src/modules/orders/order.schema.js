@@ -22,7 +22,7 @@ export const placeOrderSchema = z.object({
   paymentMode: z.enum(['UPI', 'CARD', 'NETBANKING', 'COD', 'ONLINE'], {
     errorMap: () => ({ message: 'Payment mode must be UPI, CARD, NETBANKING, COD, or ONLINE' }),
   }),
-  couponCode: z.string().trim().toUpperCase().optional(),
+  couponCode: z.string().trim().toUpperCase().nullable().optional(),
   items: z.array(
     z.object({
       productId: objectIdSchema,
@@ -30,6 +30,7 @@ export const placeOrderSchema = z.object({
       outletId: objectIdSchema.optional(),
     })
   ).optional(),
+  charityDonation: z.coerce.number().min(0).optional().default(0),
 });
 
 export const verifyPaymentSchema = z.object({

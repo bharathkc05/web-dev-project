@@ -21,6 +21,18 @@ const userSchema = new mongoose.Schema(
       index: true,
     },
     phone: { type: String, trim: true },
+    dateOfBirth: { type: String, trim: true }, // Format: DD/MM/YYYY
+    gender: { 
+      type: String, 
+      enum: ['Male', 'Female', 'Others'],
+      default: null 
+    },
+    notificationSettings: {
+      importantMessageAlerts: { type: Boolean, default: true },
+      orderTracking: { type: Boolean, default: true },
+      pushNotifications: { type: Boolean, default: true },
+      exclusiveOffers: { type: Boolean, default: true },
+    },
     savedAddresses: [
       {
         label: { type: String, required: true },

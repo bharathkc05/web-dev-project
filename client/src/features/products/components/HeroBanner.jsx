@@ -4,6 +4,7 @@ import logo from '../../../assets/logo.png';
 
 export const HeroBanner = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(true);
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,15 +28,33 @@ export const HeroBanner = () => {
   useEffect(() => {
     if (banners.length <= 1) return;
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % banners.length);
+      setIsTransitioning(true);
+      setCurrentSlide((prev) => prev + 1);
     }, 5000);
     return () => clearInterval(timer);
   }, [banners.length]);
 
+  useEffect(() => {
+    if (banners.length > 0 && currentSlide === banners.length) {
+      const timer = setTimeout(() => {
+        setIsTransitioning(false);
+        setCurrentSlide(0);
+      }, 700); // matches the duration-700 in CSS
+      return () => clearTimeout(timer);
+    }
+  }, [currentSlide, banners.length]);
+
+  useEffect(() => {
+    if (!isTransitioning && currentSlide === 0) {
+      const timer = setTimeout(() => setIsTransitioning(true), 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isTransitioning, currentSlide]);
+
   // ── Loading skeleton ──────────────────────────────────────────────────────
   if (loading) {
     return (
-      <section className="relative w-full overflow-hidden bg-neutral-900 h-[300px] md:h-[450px] lg:h-[550px] flex items-center justify-center animate-pulse">
+      <section className="relative w-full overflow-hidden bg-neutral-900 aspect-[16/9] md:aspect-[24/5] flex items-center justify-center animate-pulse">
         <div className="flex flex-col items-center gap-4 text-white/30">
           <img src={logo} alt="Velvet Bites" className="w-16 h-16 object-contain opacity-30" />
           <span className="text-sm tracking-widest uppercase">Loading offers…</span>
@@ -47,7 +66,7 @@ export const HeroBanner = () => {
   // ── No banners from server ─────────────────────────────────────────────────
   if (banners.length === 0) {
     return (
-      <section className="relative w-full overflow-hidden bg-neutral-900 h-[300px] md:h-[450px] lg:h-[550px] flex items-center justify-center">
+      <section className="relative w-full overflow-hidden bg-neutral-900 aspect-[16/9] md:aspect-[24/5] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-white/40">
           <img src={logo} alt="Velvet Bites" className="w-20 h-20 object-contain opacity-40" />
           <p className="text-sm tracking-widest uppercase">No active offers right now</p>
@@ -56,50 +75,25 @@ export const HeroBanner = () => {
     );
   }
 
-  const currentBanner = banners[currentSlide];
+  const extendedBanners = banners.length > 0 ? [...banners, banners[0]] : [];
 
   // ── Banners from server ────────────────────────────────────────────────────
   return (
-    <section className="relative w-full overflow-hidden bg-brown text-white h-[300px] md:h-[450px] lg:h-[550px]">
+    <section className="relative w-full overflow-hidden bg-brown text-white aspect-[16/9] md:aspect-[24/5]">
       {/* Slides */}
       <div
-        className="absolute inset-0 w-full h-full flex transition-transform duration-700 ease-in-out"
+        className={`absolute inset-0 w-full h-full flex ${isTransitioning ? 'transition-transform duration-700 ease-in-out' : ''}`}
         style={{ transform: `translateX(-${currentSlide * 100}%)` }}
       >
-        {banners.map((banner, idx) => (
-          <div key={banner._id ?? idx} className="w-full h-full flex-shrink-0 relative bg-black">
+        {extendedBanners.map((banner, idx) => (
+          <div key={`${banner._id ?? idx}-${idx}`} className="w-full h-full flex-shrink-0 relative bg-black">
             <img
               src={banner.imageUrl}
               alt={banner.title ?? `Banner ${idx + 1}`}
-              className="w-full h-full object-cover opacity-80"
+              className="w-full h-full object-cover"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent" />
           </div>
         ))}
-      </div>
-
-      {/* Content overlay */}
-      <div className="absolute inset-0 z-10 flex items-center">
-        <div className="max-w-[1920px] mx-auto w-full px-4 sm:px-6 lg:px-12 flex flex-col md:flex-row items-center justify-between">
-          <div className="w-full md:w-1/2 flex flex-col items-start space-y-4 text-left p-4">
-            <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tight leading-none text-[#f6eddf] drop-shadow-lg">
-              {currentBanner.title ? (
-                <span>{currentBanner.title}</span>
-              ) : (
-                <>
-                  Flame-Grilled <br />
-                  <span className="text-orange">Perfection</span>
-                </>
-              )}
-            </h1>
-            <p className="text-sm md:text-base text-white font-medium drop-shadow-md max-w-md">
-              {currentBanner.subtitle ?? 'Experience our latest deals and fresh ingredients prepared just for you.'}
-            </p>
-            <button className="bg-primary hover:bg-primary-dark text-white font-bold py-3 px-8 rounded-full shadow-lg transition-colors uppercase tracking-wide">
-              Order Now
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* Bottom bar / dot indicators */}
@@ -109,9 +103,12 @@ export const HeroBanner = () => {
           {banners.map((_, idx) => (
             <button
               key={idx}
-              onClick={() => setCurrentSlide(idx)}
+              onClick={() => {
+                setIsTransitioning(true);
+                setCurrentSlide(idx);
+              }}
               className={`h-2 rounded-full transition-all duration-300 ${
-                currentSlide === idx ? 'w-6 bg-white' : 'w-2 bg-white/50'
+                (currentSlide === idx || (currentSlide === banners.length && idx === 0)) ? 'w-6 bg-white' : 'w-2 bg-white/50'
               }`}
             />
           ))}

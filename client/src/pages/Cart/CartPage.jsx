@@ -6,11 +6,12 @@ import { useUIStore } from '../../store/uiStore';
 import { useOutletStore } from '../../store/outletStore';
 import { authService } from '../../features/auth/services/auth.service';
 import { orderService } from '../../features/orders/services/order.service';
+import { productService } from '../../features/products/services/product.service';
 import { useAuthStore } from '../../store/authStore';
 
 const CartPage = () => {
   const navigate = useNavigate();
-  const { items, updateQuantity, clearCart, subtotal } = useCart();
+  const { items, updateQuantity, clearCart, getTotals, applyOffer, clearOffer, appliedOffer } = useCart();
   const { isAuthenticated, user, token, refreshToken } = useAuth();
   const { setAuth } = useAuthStore();
   const { openAuthModal, orderMode } = useUIStore();
@@ -22,6 +23,10 @@ const CartPage = () => {
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [newAddress, setNewAddress] = useState({ label: '', street: '', city: '', state: '', zipCode: '' });
 
+  const [offerCode, setOfferCode] = useState('');
+  const [offerError, setOfferError] = useState('');
+  const [isApplyingOffer, setIsApplyingOffer] = useState(false);
+  const [availableOffers, setAvailableOffers] = useState([]);
   // Load addresses if authenticated
   useEffect(() => {
     if (isAuthenticated && user?.savedAddresses) {
@@ -31,6 +36,17 @@ const CartPage = () => {
       else if (user.savedAddresses.length > 0) setSelectedAddressId(user.savedAddresses[0]._id);
     }
   }, [isAuthenticated, user]);
+
+  // Fetch active offers for the selected outlet
+  useEffect(() => {
+    if (selectedOutlet?._id) {
+      productService.getActiveOffers(selectedOutlet._id)
+        .then(res => setAvailableOffers(res.data || []))
+        .catch(err => console.error('Failed to fetch active offers', err));
+    } else {
+      setAvailableOffers([]);
+    }
+  }, [selectedOutlet]);
 
   const handleAddAddress = async (e) => {
     e.preventDefault();
@@ -57,11 +73,25 @@ const CartPage = () => {
 
   const [donateCharity, setDonateCharity] = useState(false);
 
-  // Calculate totals
-  const tax = subtotal * 0.05; // 5% tax mock
-  const discount = 0; // Hook up to offers if needed
+  const { subtotal, tax, discount, total: baseTotal } = getTotals();
   const charityAmount = donateCharity ? 2 : 0;
-  const totalPayable = subtotal + tax - discount + charityAmount;
+  const totalPayable = baseTotal + charityAmount;
+
+  const handleApplyOffer = async () => {
+    if (!offerCode.trim()) return;
+    setIsApplyingOffer(true);
+    setOfferError('');
+    try {
+      const res = await productService.validateOffer({ code: offerCode, outletId: selectedOutlet?._id, subtotal });
+      // The backend returns the valid offer document
+      applyOffer(res.data);
+      setOfferCode('');
+    } catch (err) {
+      setOfferError(err.response?.data?.message || 'Invalid offer code');
+    } finally {
+      setIsApplyingOffer(false);
+    }
+  };
 
   // Razorpay Integration Logic
   const loadRazorpayScript = () => {
@@ -114,6 +144,8 @@ const CartPage = () => {
         paymentMode: 'ONLINE', // Or toggle based on UI selection
         address: finalAddress,
         instructions: '',
+        couponCode: appliedOffer?.code || null,
+        charityDonation: charityAmount,
         items: items.map(item => ({
           productId: item.id || item._id,
           qty: item.quantity,
@@ -428,6 +460,92 @@ const CartPage = () => {
 
                 <div className="w-full h-px bg-neutral-200 my-4"></div>
 
+                {/* Promo Code Section */}
+                <div className="flex flex-col gap-2 mt-2">
+                  <h4 className="font-bold text-on-surface text-[13px] uppercase tracking-wide">Promo Code</h4>
+                  {appliedOffer ? (
+                    <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg p-3">
+                      <div className="flex items-center gap-2">
+                        <i className="fas fa-check-circle text-green-600"></i>
+                        <span className="font-bold text-green-800 text-[13px]">'{appliedOffer.code}' applied</span>
+                      </div>
+                      <button onClick={clearOffer} className="text-red-500 hover:text-red-700 text-[12px] font-bold uppercase">Remove</button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <input 
+                          type="text" 
+                          placeholder="Enter code..."
+                          value={offerCode}
+                          onChange={(e) => setOfferCode(e.target.value.toUpperCase())}
+                          className="w-full border border-neutral-200 rounded-lg py-2.5 px-3 text-[13px] font-bold text-on-surface uppercase focus:outline-none focus:border-primary"
+                        />
+                      </div>
+                      <button 
+                        onClick={handleApplyOffer}
+                        disabled={isApplyingOffer || !offerCode}
+                        className="bg-primary text-white px-6 rounded-lg font-bold text-[13px] uppercase disabled:opacity-50 transition-colors"
+                      >
+                        {isApplyingOffer ? 'Wait...' : 'Apply'}
+                      </button>
+                    </div>
+                  )}
+                  {offerError && <p className="text-red-500 text-xs font-bold mt-1">{offerError}</p>}
+
+                  {/* Available Offers List */}
+                  {!appliedOffer && availableOffers.length > 0 && (
+                    <div className="mt-3 flex flex-col gap-2">
+                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Available Offers</p>
+                      <div className="flex flex-col gap-2">
+                        {availableOffers.map(offer => {
+                          const discountText = offer.type === 'BOGO' 
+                            ? 'Buy 1 Get 1 FREE' 
+                            : offer.type === 'PERCENT' ? `${offer.value}% OFF` : `₹${offer.value} OFF`;
+                          const minOrderText = `on orders above ₹${offer.minOrderValue}`;
+                          const isEligible = subtotal >= offer.minOrderValue;
+                          
+                          return (
+                            <div 
+                              key={offer._id} 
+                              onClick={() => {
+                                if (isEligible) setOfferCode(offer.code);
+                              }}
+                              className={`p-3 rounded-lg border border-dashed transition-all cursor-pointer flex justify-between items-center ${
+                                isEligible 
+                                  ? 'border-primary/40 hover:bg-primary/5 bg-white' 
+                                  : 'border-neutral-200 bg-neutral-50 opacity-60 cursor-not-allowed'
+                              }`}
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-black text-primary text-[13px] tracking-wider uppercase">{offer.code}</span>
+                                <span className="text-xs font-semibold text-on-surface-variant">{discountText} {minOrderText}</span>
+                              </div>
+                              <button 
+                                disabled={!isEligible}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (isEligible) {
+                                    setOfferCode(offer.code);
+                                    // Optional: automatically apply if they click the apply button here
+                                  }
+                                }}
+                                className={`text-[11px] font-bold uppercase px-3 py-1.5 rounded-full ${
+                                  isEligible ? 'bg-primary/10 text-primary hover:bg-primary hover:text-white transition-colors' : 'text-neutral-400 bg-neutral-200'
+                                }`}
+                              >
+                                {isEligible ? 'Use' : 'Locked'}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="w-full h-px bg-neutral-200 my-4"></div>
+
                 {/* Order Payment Summary */}
                 <ul className="flex flex-col gap-3">
                   <li className="flex justify-between items-center text-[13px]">
@@ -443,7 +561,6 @@ const CartPage = () => {
                   <li className="flex justify-between items-center text-[13px]">
                     <span className="text-on-surface-variant font-bold flex items-center gap-1">
                       Taxes and Charges
-                      <span className="material-symbols-outlined text-[14px] text-neutral-300">info</span>
                     </span>
                     <span className="text-on-surface font-extrabold text-[14px]">₹{tax.toFixed(2)}</span>
                   </li>

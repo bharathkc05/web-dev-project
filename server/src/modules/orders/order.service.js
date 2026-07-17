@@ -3,7 +3,7 @@
 import { Order, Cart } from './order.model.js';
 import { Product } from '../products/product.model.js';
 
-import { validateAndUseOffer, calculateDiscount } from '../products/offer.service.js';
+import { validateOffer, incrementOfferUsage, calculateDiscount } from '../products/offer.service.js';
 import { createRazorpayOrder, verifySignature, initiateRefund } from './payment.service.js';
 import { ApiError } from '../../shared/utils/ApiError.js';
 import { emitToRoom } from '../../shared/utils/socketManager.js';
@@ -108,7 +108,7 @@ export const removeFromCart = async (userId, productId) => {
 /**
  * Place a new Order (always from the user's actual cart — no bypass)
  */
-export const placeOrder = async (userId, address, instructions, paymentMode, couponCode = null, directItems = null) => {
+export const placeOrder = async (userId, address, instructions, paymentMode, couponCode = null, directItems = null, charityDonation = 0) => {
   logger.debug('placeOrder START', { userId, paymentMode, directItemsCount: directItems?.length });
 
   let itemsToProcess = [];
@@ -149,12 +149,17 @@ export const placeOrder = async (userId, address, instructions, paymentMode, cou
 
   let discount = 0;
   if (couponCode) {
-    const offer = await validateAndUseOffer(couponCode, cartOutletId, subtotal);
-    discount = calculateDiscount(offer, itemsToProcess, subtotal);
+    const offer = await validateOffer(couponCode, cartOutletId, subtotal, userId);
+    discount = calculateDiscount(offer, orderItems, subtotal);
   }
 
   const tax = (subtotal - discount) * TAX_RATE; 
-  const totalAmount = subtotal - discount + tax;
+  const totalAmount = subtotal - discount + tax + charityDonation;
+
+  // Security Audit Validation: Prevent 0 or negative totals (Razorpay requires at least INR 1.00)
+  if (totalAmount < 1) {
+    throw ApiError.badRequest('Order total must be at least ₹1 to proceed with checkout.');
+  }
 
   logger.debug('Creating order document in DB');
   const order = await Order.create({
@@ -164,6 +169,8 @@ export const placeOrder = async (userId, address, instructions, paymentMode, cou
     totalAmount: Math.round(totalAmount * 100) / 100,
     tax: Math.round(tax * 100) / 100,
     discount: Math.round(discount * 100) / 100,
+    charityDonation: Math.round(charityDonation * 100) / 100,
+    couponCode: couponCode || null,
     paymentMode,
     orderStatus: ORDER_STATUS.PLACED,
     paymentStatus: paymentMode === 'COD' ? PAYMENT_STATUS.COD : PAYMENT_STATUS.PENDING,
@@ -174,6 +181,11 @@ export const placeOrder = async (userId, address, instructions, paymentMode, cou
   if (paymentMode === 'COD') {
     logger.debug('Deleting cart after COD order');
     await Cart.deleteOne({ userId });
+
+    if (couponCode) {
+      logger.debug('Incrementing offer usage for COD order');
+      await incrementOfferUsage(couponCode, cartOutletId);
+    }
 
     logger.debug('Pushing to BullMQ');
     pushBullMQJob(order._id, 'ORDER_CONFIRMED').catch(e => logger.error('BullMQ push error:', { message: e.message }));
@@ -219,6 +231,11 @@ export const verifyPayment = async (orderId, userId, razorpayData) => {
 
     // Clear cart
     await Cart.deleteOne({ userId });
+
+    // Increment coupon usage if one was applied
+    if (order.couponCode) {
+      await incrementOfferUsage(order.couponCode, order.outletId);
+    }
 
     // Queue worker job
     await pushBullMQJob(order._id, 'ORDER_CONFIRMED');

@@ -5,9 +5,9 @@ import { PAYMENT_STATUS } from '../../shared/constants/paymentStatuses.js';
 import User from '../auth/auth.model.js';
 import AuditLog from '../../shared/models/auditLog.model.js';
 import Outlet from '../outlets/outlet.model.js';
-import Order from '../../shared/models/order.model.js';
+import { Order } from '../orders/order.model.js';
 import { Product } from '../products/product.model.js';
-import { MasterProduct } from '../../shared/models/masterProduct.model.js';
+import { MasterProduct } from '../products/masterProduct.model.js';
 import { ApiError } from '../../shared/utils/ApiError.js';
 import { deleteCache } from '../../shared/utils/cacheHelper.js';
 

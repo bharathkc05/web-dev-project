@@ -16,6 +16,8 @@ export const AccountLayout = () => {
   const navItems = [
     { path: '/account/orders', icon: 'fas fa-history', label: 'Recent Orders' },
     { path: '/account/addresses', icon: 'fas fa-map-marker-alt', label: 'Saved Addresses' },
+    { path: '/account/coupons', icon: 'fas fa-ticket-alt', label: 'My Coupons' },
+    { path: '/account/notifications', icon: 'fas fa-bell', label: 'Notifications' },
   ];
 
   return (

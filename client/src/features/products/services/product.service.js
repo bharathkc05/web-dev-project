@@ -66,8 +66,28 @@ export const productService = {
     return response.data;
   },
   
+  getActiveOffers: async (outletId) => {
+    const response = await api.get(`/products/outlets/${outletId}/offers/active`);
+    return response.data;
+  },
+  
   createOffer: async (data) => {
     const response = await api.post('/products/offers', data);
+    return response.data;
+  },
+  
+  updateOffer: async (id, data) => {
+    const response = await api.put(`/products/offers/${id}`, data);
+    return response.data;
+  },
+
+  deleteOffer: async (id) => {
+    const response = await api.delete(`/products/offers/${id}`);
+    return response.data;
+  },
+  
+  validateOffer: async (data) => {
+    const response = await api.post('/products/offers/validate', data);
     return response.data;
   }
 };

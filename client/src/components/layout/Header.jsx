@@ -13,10 +13,10 @@ export const Header = () => {
   const { openAuthModal, orderMode, toggleOrderMode } = useUIStore();
   const { selectedOutlet, setSelectedOutlet } = useOutletStore();
 
-  
+
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef(null);
-  
+
   const [isOutletOpen, setIsOutletOpen] = useState(false);
   const outletRef = useRef(null);
   const [outlets, setOutlets] = useState([]);
@@ -78,7 +78,7 @@ export const Header = () => {
       alert('Geolocation is not supported by your browser');
       return;
     }
-    
+
     setLocatingOutlet(true);
     navigator.geolocation.getCurrentPosition(
       async (position) => {
@@ -116,16 +116,15 @@ export const Header = () => {
             </Link>
             {/* Delivery / Dine-in Toggle */}
             {isCustomer && (
-              <div 
+              <div
                 className="hidden lg:flex items-center space-x-3 text-sm font-bold uppercase tracking-wide cursor-pointer"
                 onClick={toggleOrderMode}
               >
                 <span className={`transition-colors duration-200 ${orderMode === 'delivery' ? 'text-primary' : 'text-on-surface-variant'}`}>Delivery</span>
                 <div className="relative inline-block w-12 mr-2 align-middle select-none transition duration-200 ease-in pointer-events-none">
-                  <div 
-                    className={`absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none transition-all duration-300 z-10 ${
-                      orderMode === 'takeaway' ? 'translate-x-6 border-primary' : 'translate-x-0 border-primary'
-                    }`}
+                  <div
+                    className={`absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none transition-all duration-300 z-10 ${orderMode === 'takeaway' ? 'translate-x-6 border-primary' : 'translate-x-0 border-primary'
+                      }`}
                   />
                   <div
                     className="block overflow-hidden h-6 rounded-full bg-primary transition-colors duration-200"
@@ -134,11 +133,11 @@ export const Header = () => {
                 <span className={`transition-colors duration-200 ${orderMode === 'takeaway' ? 'text-primary' : 'text-on-surface-variant'}`}>Dine-in/Takeaway</span>
               </div>
             )}
-            
+
             {/* Location Selector Dropdown */}
             {isCustomer && (
               <div className="relative hidden lg:flex items-center" ref={outletRef}>
-                <div 
+                <div
                   className="flex items-center bg-surface-container px-4 py-2 rounded-full cursor-pointer hover:bg-surface-container-high transition-colors"
                   onClick={() => setIsOutletOpen(!isOutletOpen)}
                 >
@@ -148,15 +147,15 @@ export const Header = () => {
                   </span>
                   <i className={`fas fa-chevron-down ml-2 text-xs transition-transform duration-200 ${isOutletOpen ? 'rotate-180' : ''}`}></i>
                 </div>
-                
+
                 {isOutletOpen && (
                   <div className="absolute left-0 top-full mt-2 w-64 bg-white rounded-xl shadow-lg border border-surface-container-high py-2 z-50">
                     <div className="px-4 py-2 border-b border-surface-container-high mb-2 flex justify-between items-center">
                       <p className="text-sm font-bold text-on-surface">Available Outlets</p>
                     </div>
-                    
+
                     <div className="px-4 pb-2 border-b border-surface-container-high mb-2">
-                      <button 
+                      <button
                         onClick={handleFindNearest}
                         disabled={locatingOutlet}
                         className="w-full flex items-center justify-center space-x-2 bg-primary/10 text-primary hover:bg-primary/20 transition-colors py-2 rounded-lg text-sm font-bold disabled:opacity-50"
@@ -177,7 +176,7 @@ export const Header = () => {
                     ) : (
                       <div className="max-h-60 overflow-y-auto">
                         {outlets.map(outlet => (
-                          <div 
+                          <div
                             key={outlet._id}
                             className={`px-4 py-2.5 text-sm cursor-pointer hover:bg-surface-container transition-colors flex items-center justify-between ${selectedOutlet?._id === outlet._id ? 'bg-orange/10 text-primary font-bold' : 'text-on-surface'}`}
                             onClick={() => handleOutletSelect(outlet)}
@@ -211,15 +210,12 @@ export const Header = () => {
                 <Link className="hidden xl:flex items-center hover:text-primary transition-colors" to="/menu">
                   <i className="fas fa-store mr-2"></i> Menu
                 </Link>
-                <Link className="hidden xl:flex items-center hover:text-primary transition-colors" to="/">
-                  <i className="fas fa-crown text-orange mr-2"></i> King Deals
-                </Link>
               </>
             )}
-            
+
             {isAuthenticated ? (
               isCustomer && (
-                <Link 
+                <Link
                   to="/account/profile"
                   className="flex items-center justify-center w-10 h-10 rounded-full bg-surface-container hover:bg-surface-container-high transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50 text-on-surface"
                   title="My Account"
@@ -228,7 +224,7 @@ export const Header = () => {
                 </Link>
               )
             ) : (
-              <button 
+              <button
                 onClick={() => openAuthModal('login')}
                 className="flex items-center hover:text-primary transition-colors focus:outline-none"
               >

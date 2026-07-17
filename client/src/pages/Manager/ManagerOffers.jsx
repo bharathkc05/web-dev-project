@@ -7,6 +7,7 @@ export const ManagerOffers = () => {
   
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingOfferId, setEditingOfferId] = useState(null);
   
   // Form states
   const [formData, setFormData] = useState({
@@ -43,23 +44,57 @@ export const ManagerOffers = () => {
       expiryDate: '',
       usageLimit: '100',
     });
+    setEditingOfferId(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEditOffer = (offer) => {
+    setFormData({
+      code: offer.code,
+      type: offer.type,
+      value: offer.value,
+      minOrderValue: offer.minOrderValue,
+      expiryDate: new Date(offer.expiryDate).toISOString().split('T')[0],
+      usageLimit: offer.usageLimit,
+    });
+    setEditingOfferId(offer._id);
     setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
+    setEditingOfferId(null);
+  };
+
+  const handleDeleteOffer = async (id) => {
+    if (window.confirm('Are you sure you want to delete this offer?')) {
+      try {
+        await productService.deleteOffer(id);
+        fetchOffers();
+      } catch (error) {
+        console.error('Error deleting offer:', error);
+        alert(error.response?.data?.message || 'Failed to delete offer');
+      }
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     try {
-      await productService.createOffer({
+      const payload = {
         ...formData,
         value: Number(formData.value),
         minOrderValue: Number(formData.minOrderValue),
         usageLimit: Number(formData.usageLimit),
-      });
+      };
+
+      if (editingOfferId) {
+        await productService.updateOffer(editingOfferId, payload);
+      } else {
+        await productService.createOffer(payload);
+      }
+      
       handleCloseModal();
       fetchOffers();
     } catch (error) {
@@ -105,14 +140,33 @@ export const ManagerOffers = () => {
 
             return (
               <div key={offer._id} className={`relative bg-white rounded-2xl shadow-sm border border-surface-container-high overflow-hidden transition-all ${isActive ? 'hover:shadow-md hover:border-primary/30' : 'opacity-75'}`}>
-                {/* Status Badge */}
-                <div className="absolute top-4 right-4">
+                {/* Status Badge and Actions */}
+                <div className="absolute top-4 right-4 flex items-center gap-2">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
                     isActive ? 'bg-green-100 text-green-800' : 
                     isExpired ? 'bg-red-100 text-red-800' : 'bg-orange-100 text-orange-800'
                   }`}>
                     {isActive ? 'Active' : isExpired ? 'Expired' : 'Exhausted'}
                   </span>
+                  
+                  {/* Action Menu */}
+                  <div className="flex bg-white shadow-sm border border-neutral-200 rounded-full overflow-hidden">
+                    <button 
+                      onClick={() => handleEditOffer(offer)}
+                      className="p-1.5 px-2 hover:bg-neutral-100 text-neutral-600 transition-colors"
+                      title="Edit Offer"
+                    >
+                      <i className="fas fa-edit text-xs"></i>
+                    </button>
+                    <div className="w-px bg-neutral-200 my-1"></div>
+                    <button 
+                      onClick={() => handleDeleteOffer(offer._id)}
+                      className="p-1.5 px-2 hover:bg-red-50 text-red-500 transition-colors"
+                      title="Delete Offer"
+                    >
+                      <i className="fas fa-trash text-xs"></i>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="p-6">
@@ -170,10 +224,15 @@ export const ManagerOffers = () => {
       {/* Add Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="px-8 py-6 border-b border-neutral-100 flex justify-between items-center bg-surface-container-lowest">
-              <h3 className="font-display text-xl font-black text-black uppercase tracking-wider">Create Promotional Offer</h3>
-              <button onClick={handleCloseModal} className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container hover:bg-neutral-200 text-neutral-500 transition-colors">
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden shadow-xl transform transition-all">
+            <div className="p-6 border-b border-surface-container-high flex justify-between items-center">
+              <h3 className="font-display text-xl font-black text-black tracking-wider uppercase">
+                {editingOfferId ? 'Edit Offer' : 'Create New Offer'}
+              </h3>
+              <button 
+                onClick={handleCloseModal}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-surface-container hover:bg-neutral-200 text-neutral-500 transition-colors"
+              >
                 <i className="fas fa-times"></i>
               </button>
             </div>
@@ -223,8 +282,11 @@ export const ManagerOffers = () => {
                   <button type="button" onClick={handleCloseModal} className="flex-1 px-6 py-3 rounded-lg border border-neutral-200 text-black font-bold uppercase tracking-wide text-xs hover:bg-neutral-50 transition-colors">
                     Cancel
                   </button>
-                  <button type="submit" className="flex-1 bg-orange hover:bg-[#d95a20] text-white px-6 py-3 rounded-lg font-bold uppercase tracking-wide text-xs transition-colors shadow-sm flex justify-center items-center">
-                    Create Offer
+                  <button 
+                    type="submit"
+                    className="flex-1 bg-orange hover:bg-[#d95a20] text-white px-6 py-3 rounded-lg font-bold uppercase tracking-wide text-xs transition-colors shadow-sm flex justify-center items-center"
+                  >
+                    {editingOfferId ? 'Save Changes' : 'Create Offer'}
                   </button>
                 </div>
               </form>

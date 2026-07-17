@@ -97,6 +97,37 @@ export const getOffers = async (req, res, next) => {
   }
 };
 
+export const getActiveOffers = async (req, res, next) => {
+  try {
+    const { outletId } = req.params;
+    const userId = req.user?.userId || null;
+    const result = await productService.getActiveOffers(outletId, userId);
+    res.status(200).json(ApiResponse.ok(result, 'Active offers fetched successfully'));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateOffer = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await productService.updateOffer(id, req.user.outletId, req.body);
+    res.status(200).json(ApiResponse.ok(result, 'Offer updated successfully'));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteOffer = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    await productService.deleteOffer(id, req.user.outletId);
+    res.status(200).json(ApiResponse.ok(null, 'Offer deleted successfully'));
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const submitReview = async (req, res, next) => {
   try {
     const { productId } = req.params;
@@ -111,8 +142,18 @@ export const submitReview = async (req, res, next) => {
 export const applyOffer = async (req, res, next) => {
   try {
     const { code, outletId, subtotal } = req.body;
-    const result = await productService.validateOffer(code, outletId, Number(subtotal));
+    const userId = req.user?.userId || null;
+    const result = await productService.validateOffer(code, outletId, Number(subtotal), userId);
     res.status(200).json(ApiResponse.ok(result, 'Offer is valid'));
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createCampaign = async (req, res, next) => {
+  try {
+    const result = await productService.createPersonalizedCampaign(req.user.outletId, req.body);
+    res.status(201).json(ApiResponse.created(result, 'Campaign created successfully'));
   } catch (error) {
     next(error);
   }

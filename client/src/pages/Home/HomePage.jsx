@@ -1,13 +1,13 @@
 import { HeroBanner } from '../../features/products/components/HeroBanner';
 import { HomeMenuSection } from '../../features/home/components/HomeMenuSection';
-import { BKWallBanner } from '../../features/home/components/BKWallBanner';
+import { VBWallBanner } from '../../features/home/components/VBWallBanner';
 
 export const HomePage = () => {
   return (
     <>
       <HeroBanner />
       <HomeMenuSection />
-      <BKWallBanner />
+      <VBWallBanner />
     </>
   );
 };

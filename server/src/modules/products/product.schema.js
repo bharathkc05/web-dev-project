@@ -52,13 +52,19 @@ export const offerSchema = z.object({
   type: z.enum(['FLAT', 'PERCENT', 'BOGO'], {
     errorMap: () => ({ message: 'Type must be FLAT, PERCENT, or BOGO' }),
   }),
-  value: z.coerce.number().positive('Value must be a positive number'),
+  value: z.coerce.number().nonnegative('Value must be a non-negative number'),
   minOrderValue: z.coerce.number().nonnegative('Minimum order value must be non-negative').default(0),
   expiryDate: z.coerce.date().refine((date) => date > new Date(), {
     message: 'Expiry date must be in the future',
   }),
   usageLimit: z.coerce.number().int().positive('Usage limit must be a positive integer'),
   maxDiscount: z.coerce.number().positive('Max discount must be a positive number').optional().nullable(),
+});
+
+export const personalizedCampaignSchema = offerSchema.extend({
+  targetGroup: z.enum(['ALL', 'DORMANT_30_DAYS', 'LOYAL_5_PLUS_ORDERS', 'FRESH_USERS'], {
+    errorMap: () => ({ message: 'Invalid target group' }),
+  }),
 });
 
 export const reviewSchema = z.object({

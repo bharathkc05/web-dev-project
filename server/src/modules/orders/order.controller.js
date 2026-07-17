@@ -20,14 +20,15 @@ export const removeFromCart = async (req, res) => {
 };
 
 export const placeOrder = async (req, res) => {
-  const { address, instructions, paymentMode, couponCode, items } = req.body;
+  const { address, instructions, paymentMode, couponCode, items, charityDonation } = req.body;
   const result = await orderService.placeOrder(
     req.user.userId,
     address,
     instructions,
     paymentMode,
     couponCode,
-    items || req.body.mockItems // support both keys for frontend compatibility
+    items || req.body.mockItems, // support both keys for frontend compatibility
+    charityDonation
   );
   res.status(200).json(ApiResponse.ok(result, 'Order placed successfully'));
 };

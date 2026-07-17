@@ -82,5 +82,21 @@ export const authenticateAllowExpired = async (req, res, next) => {
   }
 };
 
+export const optionalAuthenticate = async (req, res, next) => {
+  try {
+    if (req.headers.authorization?.startsWith('Bearer ')) {
+      const token = extractBearerToken(req.headers.authorization);
+      const decoded = jwt.verify(token, config.JWT_ACCESS_SECRET);
+      const user = await User.findById(decoded.sub).select('_id email role isActive outletId').lean();
+      if (user && user.isActive) {
+        req.user = buildRequestUser(user);
+      }
+    }
+  } catch (error) {
+    // Ignore errors for optional auth
+  }
+  next();
+};
+
 export default authenticate;
 export { authenticate };

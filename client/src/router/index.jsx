@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout';
 import { MenuPage } from '../pages/Menu/MenuPage';
 import { ProtectedRoute } from './ProtectedRoute';
+import { PublicOrCustomerRoute } from './PublicOrCustomerRoute';
 
 import { HomePage } from '../pages/Home/HomePage';
 import CartPage from '../pages/Cart/CartPage';
@@ -12,10 +13,11 @@ import { CustomerOrderTrackPage } from '../pages/Customer/CustomerOrderTrackPage
 import { AccountLayout } from '../pages/Customer/AccountLayout';
 import { CustomerAddressesPage } from '../pages/Customer/CustomerAddressesPage';
 import { CustomerProfilePage } from '../pages/Customer/CustomerProfilePage';
+import { CustomerCouponsPage } from '../pages/Customer/CustomerCouponsPage';
+import { CustomerNotificationsPage } from '../pages/Customer/CustomerNotificationsPage';
 
-// Temporary placeholders for missing pages to prevent crashes
-const CheckoutPage = () => <div className="p-8"><h1>Checkout Page</h1></div>;
-const OutletDashboard = () => <div className="p-8"><h1>Outlet Dashboard</h1></div>;
+import { NotFoundPage } from '../pages/NotFound/NotFoundPage';
+
 import { MasterCataloguePage } from '../pages/Admin/MasterCataloguePage';
 import { CategoriesPage } from '../pages/Admin/CategoriesPage';
 import { QuickTabsPage } from '../pages/Admin/QuickTabsPage';
@@ -32,11 +34,16 @@ import { ManagerInventory } from '../pages/Manager/ManagerInventory';
 import { ManagerOffers } from '../pages/Manager/ManagerOffers';
 import { ManagerOrders } from '../pages/Manager/ManagerOrders';
 import { AdminLayout } from '../pages/Admin/AdminLayout';
+import { MarketingCampaigns } from '../pages/Admin/MarketingCampaigns';
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <AppLayout />, // The common layout with Header/Footer
+    element: (
+      <PublicOrCustomerRoute>
+        <AppLayout />
+      </PublicOrCustomerRoute>
+    ), // The common layout with Header/Footer
     children: [
       {
         path: '/',
@@ -54,14 +61,7 @@ export const router = createBrowserRouter([
         path: 'reset-password/:token',
         element: <ResetPasswordPage />,
       },
-      {
-        path: 'checkout',
-        element: (
-          <ProtectedRoute allowedRoles={['CUSTOMER']}>
-            <CheckoutPage />
-          </ProtectedRoute>
-        ),
-      },
+
       {
         path: 'orders',
         element: <Navigate to="/account/orders" replace />
@@ -95,23 +95,31 @@ export const router = createBrowserRouter([
             element: <CustomerAddressesPage />
           },
           {
+            path: 'coupons',
+            element: <CustomerCouponsPage />
+          },
+          {
             path: 'profile',
             element: <CustomerProfilePage />
+          },
+          {
+            path: 'notifications',
+            element: <CustomerNotificationsPage />
           }
         ]
       },
+      // Catch-all 404 route
+      {
+        path: '*',
+        element: <NotFoundPage showPath={true} />,
+      }
     ],
   },
   // Auth is handled via Modals, so no separate routes needed
   // Outlet specific protected routes
   {
     path: '/outlet/*',
-    element: (
-      <ProtectedRoute allowedRoles={['OUTLET_MANAGER', 'ADMIN']}>
-        {/* OutletLayout could go here */}
-        <OutletDashboard />
-      </ProtectedRoute>
-    ),
+    element: <Navigate to="/manager/dashboard" replace />,
   },
   // Manager specific protected routes
   {
@@ -148,12 +156,8 @@ export const router = createBrowserRouter([
       { path: 'analytics', element: <AnalyticsPage /> },
       { path: 'users', element: <UsersPage /> },
       { path: 'audit', element: <AuditLogPage /> },
+      { path: 'marketing', element: <MarketingCampaigns /> },
       { path: '', element: <Navigate to="dashboard" replace /> }
     ]
-  },
-  // Catch-all for 404
-  {
-    path: '*',
-    element: <div className="p-8"><h1>404 Not Found</h1></div>,
-  },
+  }
 ]);
