@@ -14,7 +14,7 @@ export const SignupPage = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  
+
   const { signup } = useAuth();
   const { closeAuthModal, setAuthModalView } = useUIStore();
 
@@ -42,10 +42,10 @@ export const SignupPage = () => {
   return (
     <div className="grid lg:grid-cols-2 bg-surface h-full min-h-[500px]">
       {/* Left Visual Panel */}
-      <AuthVisualPanel 
-        isTyping={isTyping} 
-        passwordLength={password.length} 
-        showPassword={showPassword} 
+      <AuthVisualPanel
+        isTyping={isTyping}
+        passwordLength={password.length}
+        showPassword={showPassword}
       />
 
       {/* Right Signup Section */}
@@ -54,9 +54,9 @@ export const SignupPage = () => {
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center justify-center gap-2 text-lg font-semibold mb-8 text-[#BAA38C]">
             <div className="size-10 flex items-center justify-center">
-              <img src={logo} alt="Velvet Bites Logo" className="w-full h-full object-contain drop-shadow-sm" />
+              <img src={logo} alt="Velvet Bytes Logo" className="w-full h-full object-contain drop-shadow-sm" />
             </div>
-            <span>Velvet Bites</span>
+            <span>Velvet Bytes</span>
           </div>
 
           {/* Header */}
@@ -136,8 +136,8 @@ export const SignupPage = () => {
               </div>
             )}
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isLoading}
               className="w-full h-11 bg-[#BAA38C] hover:bg-[#A68F77] text-white text-base font-bold uppercase tracking-wider rounded-xl transition-colors disabled:opacity-70 flex justify-center items-center shadow-sm mt-2"
             >
@@ -152,7 +152,7 @@ export const SignupPage = () => {
 
           {/* Social Login */}
           <div className="mt-4">
-            <button 
+            <button
               type="button"
               className="w-full h-11 bg-surface-container-lowest border-2 border-outline-variant hover:border-outline hover:bg-surface-container-low text-on-surface text-sm font-bold rounded-xl transition-all flex items-center justify-center shadow-sm"
             >
@@ -164,7 +164,7 @@ export const SignupPage = () => {
           {/* Login Link */}
           <div className="text-center text-sm text-on-surface-variant font-medium mt-6">
             Already have an account?{" "}
-            <button 
+            <button
               type="button"
               onClick={() => setAuthModalView('login')}
               className="text-[#BAA38C] font-bold hover:underline"

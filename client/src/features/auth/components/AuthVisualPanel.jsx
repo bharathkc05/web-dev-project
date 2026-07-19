@@ -3,8 +3,8 @@ import React, { useState, useEffect, useRef } from "react";
 
 import logo from '../../../assets/logo.png';
 
-const Pupil = ({ 
-  size = 12, 
+const Pupil = ({
+  size = 12,
   maxDistance = 5,
   pupilColor = "black",
   forceLookX,
@@ -66,9 +66,9 @@ const Pupil = ({
   );
 };
 
-const EyeBall = ({ 
-  size = 48, 
-  pupilSize = 16, 
+const EyeBall = ({
+  size = 48,
+  pupilSize = 16,
   maxDistance = 10,
   eyeColor = "white",
   pupilColor = "black",
@@ -250,9 +250,9 @@ export const AuthVisualPanel = ({ isTyping, passwordLength, showPassword }) => {
       <div className="relative z-20">
         <div className="flex items-center gap-2 text-lg font-semibold">
           <div className="size-10 flex items-center justify-center bg-white/10 backdrop-blur-sm rounded-lg">
-            <img src={logo} alt="Velvet Bites Logo" className="w-6 h-6 object-contain drop-shadow-sm" />
+            <img src={logo} alt="Velvet Bytes Logo" className="w-6 h-6 object-contain drop-shadow-sm" />
           </div>
-          <span>Velvet Bites</span>
+          <span>Velvet Bytes</span>
         </div>
       </div>
 
@@ -260,48 +260,48 @@ export const AuthVisualPanel = ({ isTyping, passwordLength, showPassword }) => {
         {/* Cartoon Characters */}
         <div className="relative scale-[0.65] sm:scale-75 origin-center" style={{ width: '550px', height: '400px' }}>
           {/* Purple tall rectangle character */}
-          <div 
+          <div
             ref={purpleRef}
             className="absolute bottom-0 transition-all duration-700 ease-in-out"
             style={{
               left: '70px',
               width: '180px',
               height: (isTyping || (passwordLength > 0 && !showPassword)) ? '440px' : '400px',
-              backgroundColor: '#6C3FF5', 
+              backgroundColor: '#6C3FF5',
               borderRadius: '10px 10px 0 0',
               zIndex: 1,
               transform: (passwordLength > 0 && showPassword)
                 ? `skewX(0deg)`
                 : (isTyping || (passwordLength > 0 && !showPassword))
-                  ? `skewX(${(purplePos.bodySkew || 0) - 12}deg) translateX(40px)` 
+                  ? `skewX(${(purplePos.bodySkew || 0) - 12}deg) translateX(40px)`
                   : `skewX(${purplePos.bodySkew || 0}deg)`,
               transformOrigin: 'bottom center',
             }}
           >
             {/* Eyes */}
-            <div 
+            <div
               className="absolute flex gap-8 transition-all duration-700 ease-in-out"
               style={{
                 left: (passwordLength > 0 && showPassword) ? `20px` : isLookingAtEachOther ? `55px` : `${45 + purplePos.faceX}px`,
                 top: (passwordLength > 0 && showPassword) ? `35px` : isLookingAtEachOther ? `65px` : `${40 + purplePos.faceY}px`,
               }}
             >
-              <EyeBall 
-                size={18} 
-                pupilSize={7} 
-                maxDistance={5} 
-                eyeColor="white" 
-                pupilColor="#2D2D2D" 
+              <EyeBall
+                size={18}
+                pupilSize={7}
+                maxDistance={5}
+                eyeColor="white"
+                pupilColor="#2D2D2D"
                 isBlinking={isPurpleBlinking}
                 forceLookX={(passwordLength > 0 && showPassword) ? (isPurplePeeking ? 4 : -4) : isLookingAtEachOther ? 3 : undefined}
                 forceLookY={(passwordLength > 0 && showPassword) ? (isPurplePeeking ? 5 : -4) : isLookingAtEachOther ? 4 : undefined}
               />
-              <EyeBall 
-                size={18} 
-                pupilSize={7} 
-                maxDistance={5} 
-                eyeColor="white" 
-                pupilColor="#2D2D2D" 
+              <EyeBall
+                size={18}
+                pupilSize={7}
+                maxDistance={5}
+                eyeColor="white"
+                pupilColor="#2D2D2D"
                 isBlinking={isPurpleBlinking}
                 forceLookX={(passwordLength > 0 && showPassword) ? (isPurplePeeking ? 4 : -4) : isLookingAtEachOther ? 3 : undefined}
                 forceLookY={(passwordLength > 0 && showPassword) ? (isPurplePeeking ? 5 : -4) : isLookingAtEachOther ? 4 : undefined}
@@ -310,7 +310,7 @@ export const AuthVisualPanel = ({ isTyping, passwordLength, showPassword }) => {
           </div>
 
           {/* Black tall rectangle character */}
-          <div 
+          <div
             ref={blackRef}
             className="absolute bottom-0 transition-all duration-700 ease-in-out"
             style={{
@@ -325,35 +325,35 @@ export const AuthVisualPanel = ({ isTyping, passwordLength, showPassword }) => {
                 : isLookingAtEachOther
                   ? `skewX(${(blackPos.bodySkew || 0) * 1.5 + 10}deg) translateX(20px)`
                   : (isTyping || (passwordLength > 0 && !showPassword))
-                    ? `skewX(${(blackPos.bodySkew || 0) * 1.5}deg)` 
+                    ? `skewX(${(blackPos.bodySkew || 0) * 1.5}deg)`
                     : `skewX(${blackPos.bodySkew || 0}deg)`,
               transformOrigin: 'bottom center',
             }}
           >
             {/* Eyes */}
-            <div 
+            <div
               className="absolute flex gap-6 transition-all duration-700 ease-in-out"
               style={{
                 left: (passwordLength > 0 && showPassword) ? `10px` : isLookingAtEachOther ? `32px` : `${26 + blackPos.faceX}px`,
                 top: (passwordLength > 0 && showPassword) ? `28px` : isLookingAtEachOther ? `12px` : `${32 + blackPos.faceY}px`,
               }}
             >
-              <EyeBall 
-                size={16} 
-                pupilSize={6} 
-                maxDistance={4} 
-                eyeColor="white" 
-                pupilColor="#2D2D2D" 
+              <EyeBall
+                size={16}
+                pupilSize={6}
+                maxDistance={4}
+                eyeColor="white"
+                pupilColor="#2D2D2D"
                 isBlinking={isBlackBlinking}
                 forceLookX={(passwordLength > 0 && showPassword) ? -4 : isLookingAtEachOther ? 0 : undefined}
                 forceLookY={(passwordLength > 0 && showPassword) ? -4 : isLookingAtEachOther ? -4 : undefined}
               />
-              <EyeBall 
-                size={16} 
-                pupilSize={6} 
-                maxDistance={4} 
-                eyeColor="white" 
-                pupilColor="#2D2D2D" 
+              <EyeBall
+                size={16}
+                pupilSize={6}
+                maxDistance={4}
+                eyeColor="white"
+                pupilColor="#2D2D2D"
                 isBlinking={isBlackBlinking}
                 forceLookX={(passwordLength > 0 && showPassword) ? -4 : isLookingAtEachOther ? 0 : undefined}
                 forceLookY={(passwordLength > 0 && showPassword) ? -4 : isLookingAtEachOther ? -4 : undefined}
@@ -362,7 +362,7 @@ export const AuthVisualPanel = ({ isTyping, passwordLength, showPassword }) => {
           </div>
 
           {/* Orange semi-circle character */}
-          <div 
+          <div
             ref={orangeRef}
             className="absolute bottom-0 transition-all duration-700 ease-in-out"
             style={{
@@ -377,7 +377,7 @@ export const AuthVisualPanel = ({ isTyping, passwordLength, showPassword }) => {
             }}
           >
             {/* Eyes - just pupils */}
-            <div 
+            <div
               className="absolute flex gap-8 transition-all duration-200 ease-out"
               style={{
                 left: (passwordLength > 0 && showPassword) ? `50px` : `${82 + (orangePos.faceX || 0)}px`,
@@ -390,7 +390,7 @@ export const AuthVisualPanel = ({ isTyping, passwordLength, showPassword }) => {
           </div>
 
           {/* Yellow tall rectangle character */}
-          <div 
+          <div
             ref={yellowRef}
             className="absolute bottom-0 transition-all duration-700 ease-in-out"
             style={{
@@ -405,7 +405,7 @@ export const AuthVisualPanel = ({ isTyping, passwordLength, showPassword }) => {
             }}
           >
             {/* Eyes - just pupils */}
-            <div 
+            <div
               className="absolute flex gap-6 transition-all duration-200 ease-out"
               style={{
                 left: (passwordLength > 0 && showPassword) ? `20px` : `${52 + (yellowPos.faceX || 0)}px`,
@@ -416,7 +416,7 @@ export const AuthVisualPanel = ({ isTyping, passwordLength, showPassword }) => {
               <Pupil size={12} maxDistance={5} pupilColor="#2D2D2D" forceLookX={(passwordLength > 0 && showPassword) ? -5 : undefined} forceLookY={(passwordLength > 0 && showPassword) ? -4 : undefined} />
             </div>
             {/* Mouth */}
-            <div 
+            <div
               className="absolute w-20 h-[4px] bg-[#2D2D2D] rounded-full transition-all duration-200 ease-out"
               style={{
                 left: (passwordLength > 0 && showPassword) ? `10px` : `${40 + (yellowPos.faceX || 0)}px`,
@@ -434,7 +434,7 @@ export const AuthVisualPanel = ({ isTyping, passwordLength, showPassword }) => {
       </div>
 
       {/* Decorative elements */}
-      <div className="absolute inset-0 bg-white/[0.03] bg-[size:20px_20px]" style={{backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)'}} />
+      <div className="absolute inset-0 bg-white/[0.03] bg-[size:20px_20px]" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)' }} />
       <div className="absolute top-1/4 right-1/4 size-64 bg-white/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 left-1/4 size-96 bg-black/5 rounded-full blur-3xl pointer-events-none" />
     </div>

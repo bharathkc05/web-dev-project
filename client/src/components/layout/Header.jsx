@@ -112,7 +112,7 @@ export const Header = () => {
           <div className="flex items-center space-x-6">
             {/* Logo */}
             <Link className="flex-shrink-0 relative z-50 bg-white rounded-full flex items-center justify-center w-20 h-20 -mb-4 translate-y-2" to="/">
-              <img src={logo} alt="Velvet Bites Logo" className="w-[68px] h-[68px] object-contain" />
+              <img src={logo} alt="Velvet Bytes Logo" className="w-[68px] h-[68px] object-contain" />
             </Link>
             {/* Delivery / Dine-in Toggle */}
             {isCustomer && (

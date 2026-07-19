@@ -14,7 +14,7 @@ export const LoginPage = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
-  
+
   const { login } = useAuth();
   const { closeAuthModal, setAuthModalView } = useUIStore();
 
@@ -26,7 +26,7 @@ export const LoginPage = () => {
     try {
       const data = await login({ email, password });
       closeAuthModal(); // Close modal on success
-      
+
       if (data?.user?.role === 'ADMIN') {
         navigate('/admin/dashboard');
       } else if (data?.user?.role === 'OUTLET_MANAGER') {
@@ -42,10 +42,10 @@ export const LoginPage = () => {
   return (
     <div className="grid lg:grid-cols-2 bg-surface h-full min-h-[500px]">
       {/* Left Visual Panel */}
-      <AuthVisualPanel 
-        isTyping={isTyping} 
-        passwordLength={password.length} 
-        showPassword={showPassword} 
+      <AuthVisualPanel
+        isTyping={isTyping}
+        passwordLength={password.length}
+        showPassword={showPassword}
       />
 
       {/* Right Login Section */}
@@ -54,9 +54,9 @@ export const LoginPage = () => {
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center justify-center gap-2 text-lg font-semibold mb-8 text-[#BAA38C]">
             <div className="size-10 flex items-center justify-center">
-              <img src={logo} alt="Velvet Bites Logo" className="w-full h-full object-contain drop-shadow-sm" />
+              <img src={logo} alt="Velvet Bytes Logo" className="w-full h-full object-contain drop-shadow-sm" />
             </div>
-            <span>Velvet Bites</span>
+            <span>Velvet Bytes</span>
           </div>
 
           {/* Header */}
@@ -113,10 +113,10 @@ export const LoginPage = () => {
 
             <div className="flex items-center justify-between pt-1">
               <div className="flex items-center space-x-2">
-                <input 
-                  type="checkbox" 
-                  id="remember" 
-                  className="w-4 h-4 rounded border-outline-variant text-[#BAA38C] focus:ring-[#BAA38C] accent-[#BAA38C]" 
+                <input
+                  type="checkbox"
+                  id="remember"
+                  className="w-4 h-4 rounded border-outline-variant text-[#BAA38C] focus:ring-[#BAA38C] accent-[#BAA38C]"
                 />
                 <label
                   htmlFor="remember"
@@ -143,8 +143,8 @@ export const LoginPage = () => {
               </div>
             )}
 
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isLoading}
               className="w-full h-11 bg-[#BAA38C] hover:bg-[#A68F77] text-white text-base font-bold uppercase tracking-wider rounded-xl transition-colors disabled:opacity-70 flex justify-center items-center shadow-sm mt-2"
             >
@@ -159,7 +159,7 @@ export const LoginPage = () => {
 
           {/* Social Login */}
           <div className="mt-4">
-            <button 
+            <button
               type="button"
               className="w-full h-11 bg-surface-container-lowest border-2 border-outline-variant hover:border-outline hover:bg-surface-container-low text-on-surface text-sm font-bold rounded-xl transition-all flex items-center justify-center shadow-sm"
             >
@@ -171,7 +171,7 @@ export const LoginPage = () => {
           {/* Sign Up Link */}
           <div className="text-center text-sm text-on-surface-variant font-medium mt-6">
             Don't have an account?{" "}
-            <button 
+            <button
               type="button"
               onClick={() => setAuthModalView('signup')}
               className="text-[#BAA38C] font-bold hover:underline"

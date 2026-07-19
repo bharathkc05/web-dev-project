@@ -56,7 +56,7 @@ export const HeroBanner = () => {
     return (
       <section className="relative w-full overflow-hidden bg-neutral-900 aspect-[16/9] md:aspect-[24/5] flex items-center justify-center animate-pulse">
         <div className="flex flex-col items-center gap-4 text-white/30">
-          <img src={logo} alt="Velvet Bites" className="w-16 h-16 object-contain opacity-30" />
+          <img src={logo} alt="Velvet Bytes" className="w-16 h-16 object-contain opacity-30" />
           <span className="text-sm tracking-widest uppercase">Loading offers…</span>
         </div>
       </section>
@@ -68,7 +68,7 @@ export const HeroBanner = () => {
     return (
       <section className="relative w-full overflow-hidden bg-neutral-900 aspect-[16/9] md:aspect-[24/5] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4 text-white/40">
-          <img src={logo} alt="Velvet Bites" className="w-20 h-20 object-contain opacity-40" />
+          <img src={logo} alt="Velvet Bytes" className="w-20 h-20 object-contain opacity-40" />
           <p className="text-sm tracking-widest uppercase">No active offers right now</p>
         </div>
       </section>
@@ -107,15 +107,14 @@ export const HeroBanner = () => {
                 setIsTransitioning(true);
                 setCurrentSlide(idx);
               }}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                (currentSlide === idx || (currentSlide === banners.length && idx === 0)) ? 'w-6 bg-white' : 'w-2 bg-white/50'
-              }`}
+              className={`h-2 rounded-full transition-all duration-300 ${(currentSlide === idx || (currentSlide === banners.length && idx === 0)) ? 'w-6 bg-white' : 'w-2 bg-white/50'
+                }`}
             />
           ))}
         </div>
         <div className="flex items-center font-bold">
           <span className="mr-2">Limited Time Only</span>
-          <img src={logo} alt="Velvet Bites Logo" className="w-6 h-6 object-contain" />
+          <img src={logo} alt="Velvet Bytes Logo" className="w-6 h-6 object-contain" />
         </div>
       </div>
     </section>

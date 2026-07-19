@@ -31,9 +31,9 @@ export const ResetPasswordPage = () => {
         const errorMessages = Object.values(err.response.data.errors).join('. ');
         setStatus({ type: 'error', message: errorMessages });
       } else {
-        setStatus({ 
-          type: 'error', 
-          message: err.response?.data?.message || 'Failed to reset password. Please try again.' 
+        setStatus({
+          type: 'error',
+          message: err.response?.data?.message || 'Failed to reset password. Please try again.'
         });
       }
     } finally {
@@ -46,9 +46,9 @@ export const ResetPasswordPage = () => {
       <div className="w-full max-w-[420px] bg-surface-container-low p-8 rounded-2xl shadow-xl">
         <div className="flex flex-col items-center justify-center gap-2 text-xl font-semibold mb-8 text-[#BAA38C]">
           <div className="size-12 flex items-center justify-center">
-            <img src={logo} alt="Velvet Bites Logo" className="w-full h-full object-contain drop-shadow-sm" />
+            <img src={logo} alt="Velvet Bytes Logo" className="w-full h-full object-contain drop-shadow-sm" />
           </div>
-          <span>Velvet Bites</span>
+          <span>Velvet Bytes</span>
         </div>
 
         <div className="text-center mb-8">
@@ -91,11 +91,10 @@ export const ResetPasswordPage = () => {
           </div>
 
           {status.message && (
-            <div className={`p-3 text-sm font-medium border rounded-lg flex items-center ${
-              status.type === 'error' 
-                ? 'text-red-600 bg-red-50 border-red-100' 
+            <div className={`p-3 text-sm font-medium border rounded-lg flex items-center ${status.type === 'error'
+                ? 'text-red-600 bg-red-50 border-red-100'
                 : 'text-green-700 bg-green-50 border-green-200'
-            }`}>
+              }`}>
               {status.type === 'error' ? (
                 <svg className="w-5 h-5 mr-2 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -109,8 +108,8 @@ export const ResetPasswordPage = () => {
             </div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={isLoading || status.type === 'success'}
             className="w-full h-11 bg-[#BAA38C] hover:bg-[#A68F77] text-white text-base font-bold uppercase tracking-wider rounded-xl transition-colors disabled:opacity-70 flex justify-center items-center shadow-sm mt-2"
           >
