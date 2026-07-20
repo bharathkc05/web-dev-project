@@ -16,8 +16,9 @@ Velvet Bytes is a comprehensive, highly scalable real-time food ordering and e-c
 7. [Running the Application](#running-the-application)
 8. [API Documentation (Key Routes)](#api-documentation-key-routes)
 9. [Event-Driven Workflows](#event-driven-workflows)
-10. [Troubleshooting & FAQs](#troubleshooting--faqs)
-11. [License & Credits](#license--credits)
+10. [Demo](#demo)
+11. [Troubleshooting & FAQs](#troubleshooting--faqs)
+12. [License & Credits](#license--credits)
 
 ---
 
@@ -262,6 +263,11 @@ All routes are prefixed with `/api`.
 3. **Verification**: The client sends the payment signature to `/orders/verify`. The server validates the HMAC SHA256 signature.
 4. **Kafka Publishing**: The server publishes an `ORDER_PLACED` event to the `orders.events` Kafka topic. The API immediately responds `200 OK` to the client without waiting for heavy database writes.
 5. **Consumption & WebSockets**: The Kafka consumer picks up the event, updates the MongoDB document, and emits an `ORDER_NEW` event via WebSockets strictly to the room associated with the order's `outletId`.
+
+---
+
+##Demo
+Full Project Demo Link : https://drive.google.com/file/d/1dkKDvGfsCn-pcnil4NbyJJNyXIYv7hD6/view?usp=drivesdk
 
 ---
 
